@@ -1,0 +1,10 @@
+
+
+# rsc-vibe-hook:start
+[[hooks]]
+name = "rsc-danger-guard"
+type = "pre_tool"
+match = "re:bash|process_start"
+strict = true
+command = "node .rsc/vibe-danger-guard.mjs"
+# rsc-vibe-hook:end

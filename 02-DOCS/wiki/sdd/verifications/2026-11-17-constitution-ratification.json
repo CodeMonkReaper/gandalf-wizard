@@ -1,0 +1,49 @@
+{
+  "timestampUtc": "2026-11-17T21:35:53.2992494Z",
+  "constitution": "02-DOCS/wiki/sdd/constitution.md",
+  "doctor": [
+    {
+      "pending": [],
+      "healthy": true,
+      "onboarding": {
+        "status": "ready",
+        "missing": [],
+        "pending": [],
+        "action": ""
+      },
+      "target": "vibe"
+    },
+    {
+      "pending": [],
+      "healthy": true,
+      "onboarding": {
+        "status": "ready",
+        "missing": [],
+        "pending": [],
+        "action": ""
+      },
+      "target": "codex"
+    },
+    {
+      "pending": [],
+      "healthy": true,
+      "onboarding": {
+        "status": "ready",
+        "missing": [],
+        "pending": [],
+        "action": ""
+      },
+      "target": "antigravity"
+    }
+  ],
+  "openDecisions": [
+    "stack",
+    "architecture",
+    "quality",
+    "initial-scope"
+  ],
+  "review": "REVIEW.md",
+  "ratifiedBy": "project-owner",
+  "approval": "esta bien acepto",
+  "version": "v1.0.0"
+}
