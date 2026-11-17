@@ -61,7 +61,7 @@ func Present(outcome MemoryQueryOutcome) PresentedMemoryView {
 			StatusText:        LabelNoMatches,
 			DegradationNotice: resolveDegradationNotice(outcome),
 		}
-	default:
+	case StatusOK:
 		if len(outcome.Entries) == 0 {
 			return PresentedMemoryView{
 				StatusText:        LabelNoMatches,
@@ -71,6 +71,11 @@ func Present(outcome MemoryQueryOutcome) PresentedMemoryView {
 		return PresentedMemoryView{
 			DegradationNotice: resolveDegradationNotice(outcome),
 			Rows:              mapEntries(outcome.Entries),
+		}
+	default:
+		return PresentedMemoryView{
+			StatusText:        LabelIncomplete,
+			DegradationNotice: resolveDegradationNotice(outcome),
 		}
 	}
 }

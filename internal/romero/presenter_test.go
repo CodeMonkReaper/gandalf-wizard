@@ -198,17 +198,24 @@ func TestProvenancePresenter(t *testing.T) {
 		var presenter ProvenancePresenter
 
 		t.Run("access denied and scope required strip residual entries and notices", func(t *testing.T) {
-			for _, st := range []OutcomeStatus{StatusAccessDenied, StatusScopeRequired} {
+			cases := []struct {
+				status   OutcomeStatus
+				wantText string
+			}{
+				{status: StatusAccessDenied, wantText: labelAccessDenied},
+				{status: StatusScopeRequired, wantText: labelScopeRequired},
+			}
+			for _, tc := range cases {
 				got := presenter.Present(MemoryQueryOutcome{
-					Status:            st,
+					Status:            tc.status,
 					Degraded:          true,
 					DegradationNotice: "aviso residual",
 					Entries: []AttributedMemoryEntry{
 						{Summary: "Secreto", MemoryID: "M-SEC", SourceRefDisplay: "F-SEC"},
 					},
 				})
-				if got.StatusText == "" || got.DegradationNotice != "" || len(got.Rows) != 0 {
-					t.Fatalf("status %q -> got %+v, expected non-empty StatusText, empty notice, and 0 rows", st, got)
+				if got.StatusText != tc.wantText || got.DegradationNotice != "" || len(got.Rows) != 0 {
+					t.Fatalf("status %q -> got %+v, want StatusText=%q, empty notice, and 0 rows", tc.status, got, tc.wantText)
 				}
 			}
 		})
@@ -228,8 +235,26 @@ func TestProvenancePresenter(t *testing.T) {
 				Degraded:          true,
 				DegradationNotice: "   ",
 			})
-			if got.StatusText != LabelNoMatches || got.DegradationNotice == "" || len(got.Rows) != 0 {
-				t.Fatalf("got %+v, want LabelNoMatches and non-empty default DegradationNotice", got)
+			if got.StatusText != LabelNoMatches || got.DegradationNotice != defaultDegradedNotice || len(got.Rows) != 0 {
+				t.Fatalf("got %+v, want LabelNoMatches and DegradationNotice=%q", got, defaultDegradedNotice)
+			}
+		})
+
+		t.Run("zero-value or unknown outcome status fails closed with LabelIncomplete", func(t *testing.T) {
+			cases := []MemoryQueryOutcome{
+				{},
+				{
+					Status: OutcomeStatus("unknown_error"),
+					Entries: []AttributedMemoryEntry{
+						{MemoryID: "M99", Summary: "No verificado", SourceRefDisplay: "F99"},
+					},
+				},
+			}
+			for _, outcome := range cases {
+				got := presenter.Present(outcome)
+				if got.StatusText != LabelIncomplete || len(got.Rows) != 0 {
+					t.Fatalf("outcome %+v -> got %+v, want StatusText=%q and 0 rows", outcome, got, LabelIncomplete)
+				}
 			}
 		})
 	})
