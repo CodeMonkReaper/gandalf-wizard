@@ -3,7 +3,7 @@ type: checkpoint
 title: Preparación del entorno RSC
 description: Punto de relevo entre Vibe, Codex y Antigravity antes del desarrollo.
 tags: [sdd, checkpoint, harness]
-timestamp: 2026-11-17T22:52:00Z
+timestamp: 2026-11-17T23:14:00Z
 topic: sdd
 ---
 
@@ -16,6 +16,6 @@ topic: sdd
 - Hecho: onboarding aceptado aplicado, 33 skills compartidas, `doctor` saludable en los tres targets; permisos automáticos Git y knowledge-sync desactivados. Evidencia en [verificación](../verifications/2026-11-17-entorno-rsc.json).
 - Artefactos activos: [constitución v1.1.0](../constitution.md), [configuración SDD](../config.yaml), [decisiones](../decisions.md), [instalación/capacidades](../../harness/installation.md), [REVIEW.md](../../../../REVIEW.md).
 - El propietario aprobó la versión aclarada de la [consulta de memoria en ROMERO](../specs/consulta-memoria-romero.md) (`status: approved`, nueve casos de aceptación). En `clarify` eligió mostrar las decisiones vigentes y las sustituidas, identificando estas últimas en el caso 9. [Verificación documental](../verifications/2026-11-17-consulta-memoria-romero.json)
-- Siguiente acción. Hallazgos `F1` y `F2` de [analyze](../analysis/consulta-memoria-romero.md) resueltos (`0` hallazgos abiertos) y [convenciones Go](../../stack/go.md) creadas. En pre-flight de `worktrees`, falta confirmar con el propietario si se hace primero el commit base del entorno RSC + `02-DOCS/` en `chore/rsc-development-environment` antes de crear el worktree `feat/consulta-memoria-romero` para iniciar `implement` (`T001`). La prueba de integración requiere una instancia autorizada.
+- Siguiente acción. Commit base `430db11` realizado en `chore/rsc-development-environment`, worktree `.worktrees/consulta-memoria-romero` abierto en `feat/consulta-memoria-romero` y tarea `T001` completada (`c718f55`, Tier 1 `VERDICT: pass`). Siguiente paso: ejecutar `T002` (`ProjectScopeGuard`) en `.worktrees/consulta-memoria-romero`. La prueba de integración requiere una instancia autorizada.
 - Límites: no se ha probado invocación efectiva de subagentes ni paridad de guards; memoria automática no soportada por el fork en Vibe/Antigravity. La suite completa del fork no está verde en Windows. Consultar los límites operativos antes de afirmar un control determinista.
 - Antes de relevar: actualizar este checkpoint o crear uno nuevo y enlazarlo desde `wiki/index.md`; conservar evidencia verificable sin transcripciones ni secretos.
