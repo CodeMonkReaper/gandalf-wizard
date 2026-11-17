@@ -3,7 +3,7 @@ type: progress
 title: Progreso — Consulta de memoria de proyecto en ROMERO
 description: Registro incremental de tareas TDD, revisiones y controles por tarea para Foundation 0.1.
 tags: [sdd, progress, foundation, romero]
-timestamp: 2026-11-17T23:28:00Z
+timestamp: 2026-11-17T23:46:00Z
 topic: sdd
 slug: consulta-memoria-romero
 branch: feat/consulta-memoria-romero
@@ -52,3 +52,20 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/2
   - traceability: ✅ (`AC7`)
 - skill_resolution: `used: [implement, go, verify, review]` · `missing: []` · `fallback: []`
 - decision: ninguna desviación del plan; siguiente tarea `T003`
+
+## T003 — 2026-11-17
+- status: complete
+- commits: `4bfee12e170640273c8e8f59b9f546391ad3c589` (ronda 1), `62b4a2868b0c8111213afdb03132afaa4f9271ff` (ronda 2) en `feat/consulta-memoria-romero`, worktree `.worktrees/consulta-memoria-romero`, base `6f6b9b4`
+- red: `go test -v ./internal/romero -run TestRomeroFakeAdapter` falló (código 1) en los 5 subtests iniciales (`len(Hits) = 0`, etc.)
+- green: `go test -v ./internal/romero -run TestRomeroFakeAdapter` pasó (5 subtests iniciales en `PASS`)
+- triangulation: 13 subtests en `PASS` tras arreglo de ronda 2 (`62b4a28`): contratos completos en `MemorySearchHit` y `MemoryDetail`, fallback `VigenciaActive`, cancelación de `context.Context`, opacidad de `ErrAccessDenied`, `DeniedMemoryIDs`, fugas separadas `AllowCrossProjectSearchLeak` / `AllowCrossProjectDetailLeak` y colisión de `MemoryID` (`go test -cover ./...`: `93.3% of statements`)
+- files: `internal/romero/port.go`, `internal/romero/fake_adapter.go`, `internal/romero/fake_adapter_test.go`
+- risk: tier 1 (`rsc risk --base 6f6b9b4ce2a8eb594a048a451ae49be61eed4783 --json`, 1 revisor)
+- review: ronda 1 → `3 reported → 2 unique (L1, L2) → changes-needed`; ronda 2 → `0 new → VERDICT: pass` (`L1: fixed`, `L2: fixed`, 0% false rate)
+- controls:
+  - tests: ✅ (`go test -v ./internal/romero -run TestRomeroFakeAdapter` y `go test -cover ./...` en `PASS`; `-race` no ejecutado por `CGO_ENABLED=0`)
+  - build: ✅ (`gofmt -l .` vacío; `go vet ./...` en `PASS`)
+  - security: ✅ (interfaz `RomeroReadPort` de solo lectura; `ErrAccessDenied` opaco sin IDs ni datos; fugas de búsqueda/detalle desacopladas)
+  - traceability: ✅ (`AC1, AC2, AC3, AC4, AC5, AC8, AC9`)
+- skill_resolution: `used: [implement, go, verify, review]` · `missing: []` · `fallback: []`
+- decision: ninguna desviación del plan; se desacoplaron `AllowCrossProjectSearchLeak` y `AllowCrossProjectDetailLeak` en `RomeroFakeAdapter` tras hallazgo `L2`; siguiente tarea `T004`
