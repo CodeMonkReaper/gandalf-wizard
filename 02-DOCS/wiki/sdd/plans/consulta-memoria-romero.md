@@ -3,7 +3,7 @@ type: plan
 title: Plan — Consulta de memoria de proyecto en ROMERO
 description: Plan técnico a nivel de estructura, contratos, flujo de datos y estrategia de pruebas para Foundation 0.1.
 tags: [sdd, plan, foundation, romero]
-timestamp: 2026-11-17T22:52:00Z
+timestamp: 2026-11-17T23:28:00Z
 topic: sdd
 slug: consulta-memoria-romero
 status: approved
@@ -11,7 +11,7 @@ status: approved
 
 # Plan — Consulta de memoria de proyecto en ROMERO
 
-> Spec: [../specs/consulta-memoria-romero.md](../specs/consulta-memoria-romero.md) · Constitution: [../constitution.md](../constitution.md) · Status: approved
+> Spec: [../specs/consulta-memoria-romero.md](../specs/consulta-memoria-romero.md) · Constitution: [../constitution.md](../constitution.md) · Issue: [#2](https://github.com/CodeMonkReaper/gandalf-wizard/issues/2) · Status: approved
 > Last updated: 2026-11-17
 
 ## 0. Global Constraints
@@ -29,6 +29,7 @@ status: approved
 - **Contenido atribuido sin efectos colaterales:** cualquier instrucción o sugerencia de acción contenida dentro de un recuerdo se trata como texto atribuido inerte; nunca dispara herramientas ni altera permisos (`spec §Criterios #6`).
 - **Higiene de secretos, repositorios y autoría:** prohibido incluir credenciales, tokens o datos privados en código, pruebas o artefactos de verificación; no introducir código fuente de RSC en el repositorio de Gandalf; commits con autoría humana exclusiva sin `Co-Authored-By` de IA (`constitution §Principios #1, #4, #5, #8`, `REVIEW.md`).
 - **Stack y controles de calidad obligatorios:** Go (`go1.27.3`, módulo en `go.mod` sin dependencia externa al repositorio de ROMERO, paquete `internal/romero`), transporte inicial REST con `net/http` estándar sobre el contrato público de `pkg/romeroclient` (`POST /api/v1/memories/search` con `include_superseded: true` y `GET /api/v1/memories/{id}`, revisión `3f46f9a322b3b44b946889d8474ac835b98bf9fb`), verificación obligatoria con `gofmt -l .` (salida vacía), `go vet ./...` y `go test ./...` (`constitution v1.1.0`).
+- **Trazabilidad obligatoria por Issue:** todo trabajo de esta especificación avanza vinculado al [Issue #2](https://github.com/CodeMonkReaper/gandalf-wizard/issues/2), referenciando los commits y el PR al Issue y manteniendo actualizado su checklist (`constitution v1.2.0`).
 
 ## 1. Context & constraints
 

@@ -3,14 +3,17 @@ type: progress
 title: Progreso — Consulta de memoria de proyecto en ROMERO
 description: Registro incremental de tareas TDD, revisiones y controles por tarea para Foundation 0.1.
 tags: [sdd, progress, foundation, romero]
-timestamp: 2026-11-17T23:24:00Z
+timestamp: 2026-11-17T23:28:00Z
 topic: sdd
 slug: consulta-memoria-romero
 branch: feat/consulta-memoria-romero
 base_sha: 430db11aa0f20c5d4346f3679f599f78fcc7eb36
+issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/2
 ---
 
 # Progreso — Consulta de memoria de proyecto en ROMERO
+
+> Issue vinculado: [#2](https://github.com/CodeMonkReaper/gandalf-wizard/issues/2) · Repositorio: [CodeMonkReaper/gandalf-wizard](https://github.com/CodeMonkReaper/gandalf-wizard)
 
 ## Decision queue
 
