@@ -3,7 +3,7 @@ type: decision-log
 title: Decisiones ASDD de Gandalf Wizard
 description: Decisiones aprobadas y propuestas pendientes de ratificación.
 tags: [sdd, decisions]
-timestamp: 2026-11-17T22:52:00Z
+timestamp: 2026-11-17T23:28:00Z
 topic: sdd
 ---
 
@@ -19,3 +19,4 @@ topic: sdd
 - 2026-11-17 — Aprobado por el propietario: [plan técnico de consulta-memoria-romero](plans/consulta-memoria-romero.md) (`status: approved`) para pasar a `tasks`, y aislamiento de la futura implementación en un worktree/rama nueva (`worktrees`). Queda pendiente confirmar la propuesta de stack y transporte inicial para fijar los `done-check` ejecutables de cada tarea.
 - 2026-11-17 — Aprobado por el propietario («si»): stack Go (`go1.27.3`, módulos Go con `go.mod`, paquete `internal/romero`), transporte inicial REST sobre el contrato público `pkg/romeroclient` y controles verificables `go test ./...`, `go vet ./...` y `gofmt -l .`. Se enmienda [la constitución a v1.1.0](constitution.md), se calibra [config.yaml](config.yaml) (`sdd-init`) con `strict_tdd: true` y se desglosan las tareas `T001`..`T009` en [consulta-memoria-romero.md](plans/consulta-memoria-romero.md).
 - 2026-11-17 — Aprobado por el propietario («si procede»): implementar `T007` (`RomeroPublicClientAdapter`) usando exclusivamente `net/http` estándar sobre el wire-contract REST de `pkg/romeroclient` sin dependencia externa en `go.mod` (respetando la separación de repositorios), cerrando los hallazgos `F1` y `F2` de `analyze` en [consulta-memoria-romero.md](plans/consulta-memoria-romero.md) y registrando las [convenciones Go](../stack/go.md).
+- 2026-11-17 — Autorizado por el propietario («abre el repo publico y siempre debemos trabajar con issues para que quede todo bien documentado»): creado el repositorio público [CodeMonkReaper/gandalf-wizard](https://github.com/CodeMonkReaper/gandalf-wizard) (`origin`), publicadas las ramas `master`, `chore/rsc-development-environment` y `feat/consulta-memoria-romero`, abiertos el [Issue #1](https://github.com/CodeMonkReaper/gandalf-wizard/issues/1) (entorno RSC y base ASDD) y el [Issue #2](https://github.com/CodeMonkReaper/gandalf-wizard/issues/2) (Foundation 0.1 — consulta de memoria en ROMERO), y enmendada [la constitución a v1.2.0](constitution.md) para exigir Issues vinculados en todo flujo de trabajo.
