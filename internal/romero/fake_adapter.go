@@ -34,6 +34,7 @@ type RomeroFakeAdapter struct {
 	InterruptDetailIDs          map[string]bool
 	OmitProjectIDInSearch       bool
 	AllowCrossProjectSearchLeak bool
+	AllowCrossProjectDetailLeak bool
 
 	operations []string
 }
@@ -112,8 +113,8 @@ func (a *RomeroFakeAdapter) GetDetail(ctx context.Context, scope ResolvedScope, 
 		if rec.MemoryID != memoryID {
 			continue
 		}
-		if !a.AllowCrossProjectSearchLeak && rec.ProjectID != scope.ProjectID {
-			return MemoryDetail{}, ErrAccessDenied
+		if !a.AllowCrossProjectDetailLeak && rec.ProjectID != scope.ProjectID {
+			continue
 		}
 		return MemoryDetail{
 			MemoryID:       rec.MemoryID,
