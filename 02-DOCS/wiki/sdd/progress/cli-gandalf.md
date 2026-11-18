@@ -114,3 +114,13 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/5
 - review: ronda 1/3, 1 nit → L7 intentional (args extra ignorados en config show); VERDICT: pass
 - controls: tests ✅ (6 paquetes ok) · build ✅ (`go build ./...`, `gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (token leído del entorno por llamada, nunca almacenado ni impreso; AC12: 0 llamadas sin proyecto) · traceability ✅ (AC1-AC8, AC12 cubiertos a nivel unitario; AC9-AC13 van en T009)
 - decision: corrección transversal de T002 descubierta aquí — GlobalConfigPath solo se informa si el archivo global existe (referencia 4: «global: no encontrado»); el timeout de contexto se aplica solo con configuración cargada
+
+## T009 — 2026-11-18
+- status: complete (commit `0aca12b`, sub-Issue #13)
+- red: suite escrita contra la spec falló en AC10/AC11/AC13 por defectos del propio test (caso «empty» consultaba al servidor con resultados; `block` solo cubría /system/status, al que `memory query` nunca llama); AC1-AC9 y AC12 pasaron directamente contra el producto de T002-T008
+- green: `go test -v ./internal/cli -run TestAcceptance_AC1_to_AC13` PASS (13 ACs); `go test -count=1 -cover ./...` 6 paquetes ok, cli 85.3%
+- files: `internal/cli/acceptance_test.go`
+- risk: tier 1 (`rsc risk --base daccd10 --json`: `classes: ["default","docs"]`, `reviewers: 1`)
+- review: ronda 1/3, 3 hallazgos → L8 fixed (AC3: errorRuns apuntaba al servidor sano, la ruta denegada no se ejercitaba), L9 fixed (código muerto: parsed, romeroArgs, bucle AC6 redundante), L10 intentional (consulta sin --romero-url usa URL por defecto; la aserción de fuga es de salida y cubre éxito y error según el entorno); VERDICT: pass
+- controls: tests ✅ (6 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (centinela ausente en ~13 salidas de éxito y error incluida denegación 401; AC12 re-verificado con contador de peticiones) · traceability ✅ (AC1-AC13)
+- decision: los handlers bloqueados despiertan por canal `release` cerrado en el cleanup (LIFO, antes de `server.Close`) porque la cancelación del cliente no siempre propaga hasta `r.Context()` en el lado servidor y `Close` colgaba; AC11 cubre partial/incomplete vía `RomeroFakeAdapter` y scope_required vía `Present()` porque la CLI no puede producirlos (el guard de proyecto va antes, cubierto por AC12)
