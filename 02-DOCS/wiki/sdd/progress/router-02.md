@@ -112,3 +112,18 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
 - investigación documental: ayuda del binario 1.5.10 contrastada con la documentación oficial (headless, permisos CLI); `--settings` valida claves sin cuota; `agy models` emite TSV `slug→Nombre (Esfuerzo)`
 - reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
 - errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un error de compilación (`exec.LookPath` devuelve `(string, error)`, no `(string, bool)`) y un pánico del rojo (`f.last()` nil con el stub) se corrigieron antes del verde
+
+## T006 — 2026-11-18
+- status: complete · issue [#21](https://github.com/CodeMonkReaper/gandalf-wizard/issues/21) cerrada con close review
+- red: `go test ./internal/router/vibe -run '^TestAdapter$' -count=1` falló por aserción en 19 de 21 subtests (los 2 restantes esperan `unproven`, el default del stub); sin pánico tras añadir guardas de `nil`
+- green: misma suite ok, 22 subtests (incluye cancelación, plazo y exit 3 con procesos reales compilados en la prueba)
+- files: `internal/router/vibe/adapter.go`, `internal/router/vibe/adapter_test.go`
+- commit: `7e5d413` (base `65d3b10`)
+- risk: tier 1 (`rsc risk` sobre el diff real) — 1 revisor
+- review: 2 reportados → 2 únicos → 0 blocker/should-fix; 1 minor (L15, exit 3 documentado clasificado como executor-error en vez de timeout) y 1 nit (L14, `strconvItoa` artesanal) corregidos en el mismo commit (amend)
+- controls: tests ✅ (`go test ./...` 9 paquetes ok) · build ✅ (`go vet ./...`) · security ✅ (sin autoaprobación ni `--trust`; entorno del hijo sin credenciales ajenas, `ROMERO_` ni contexto `VIBE_`; stderr y diagnósticos crudos nunca salen; sesión nativa intacta; `Execute` bloqueado sin solo texto demostrado) · traceability ✅ (AC2, AC5, AC6, AC11–AC13, AC15, AC18)
+- decisiones de diseño: registradas en [decisions.md](../decisions.md) — indicador de sesión por presencia de `~/.vibe/whoami_cache.json` (ausente → `unknown`), `Discover` siempre `unavailable` (sin descubrimiento documentado sin cuota), esfuerzo omitido (Vibe 3.1.2 no declara flag), receta `--agent ask` + `--enabled-tools` sin coincidencias + `--max-turns 1` + `--output json` + `--output-dir` aislado, exclusión de `VIBE_*` del entorno del hijo, exit 3 → `FailureTimeout`, `--time-limit` reflejando el plazo (mínimo 1 s)
+- investigación documental: ayuda del binario 3.1.2 contrastada con la documentación oficial (modo programático, códigos de salida 0–3, `--enabled-tools` desactiva el resto, `--agent ask` deniega herramientas en headless); forma del JSON de sesión verificada localmente
+- límite registrado: la corrida de investigación de la forma JSON hizo una llamada parcial al modelo (exit 3 con guardas `--max-turns 0 --max-price 0 --time-limit 20`); consumió una cantidad mínima de cuota; la evidencia viva del centinela queda para T010 con autorización
+- reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
+- errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un bug del helper de pruebas (`sessionMessages` interpolaba un `\n` real dentro del JSON y lo invalidaba) se detectó con un test de depuración temporal y se corrigió escapando con `json.Marshal` antes del verde
