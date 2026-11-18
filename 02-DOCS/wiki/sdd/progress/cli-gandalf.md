@@ -75,3 +75,12 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/5
 - review: ronda 1/3, 1 should-fix → L5 fixed (degradation_notice del JSON ahora usa el aviso resuelto del presentador; triangulación con Degraded=true y aviso vacío); VERDICT: pass
 - controls: tests ✅ (`go test ./...` 4 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (render no accede a entorno ni secretos; denegación sin resúmenes ni IDs verificado) · traceability ✅ (AC1, AC2, AC3, AC6, AC7, AC9, AC10, AC11)
 - decision: salidas humanas y JSON comparten el aviso de degradación resuelto por el presentador para que agente y persona lean lo mismo; referencias 1-4 de la spec verificadas byte a byte
+
+## T005 — 2026-11-18
+- status: complete (commit `9c2e575`, sub-Issue #9)
+- red: `go test -v ./internal/harness -run TestDetectHarnesses` falló (stub con report vacío)
+- green: mismo comando en PASS; `go test -count=1 -cover ./internal/harness` 100%
+- files: `internal/harness/detect.go`, `internal/harness/detect_test.go`
+- risk: tier 1 (`rsc risk --base b1e62c8 --json`: `classes: ["default","docs"]`, `reviewers: 1`)
+- review: ronda 1/3, 0 hallazgos; VERDICT: pass (solo lectura probada por snapshot de árbol, fallback agy, nil-safe)
+- controls: tests ✅ (`go test ./...` 5 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (solo lookPath inyectable y os.Stat; cero escrituras) · traceability ✅ (AC8)
