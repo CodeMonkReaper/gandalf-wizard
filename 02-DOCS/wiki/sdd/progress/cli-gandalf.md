@@ -55,3 +55,13 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/5
 - review: ronda 1/3, 3 nits → L1 fixed (bloque duplicado en test), L2/L3 intentional; VERDICT: pass
 - controls: tests ✅ (`go test ./...` completo en PASS) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (solo stdlib; errores con motivo fijo sin texto de parseo; `EffectiveConfig` sin valor de `ROMERO_API_KEY`) · traceability ✅ (AC2, AC3, AC5)
 - decision: motivos de error sanitizados con cadenas fijas (p. ej. «JSON inválido») sin eco del error de parseo, para que ningún carácter del archivo llegue a stdout/stderr (constitución P5); registrado en decisions.md
+
+## T003 — 2026-11-18
+- status: complete (commit `a3716f1`, sub-Issue #7)
+- red: `go test -v ./internal/config -run TestInitProjectConfig` falló en aserciones con stub
+- green: mismo comando en PASS; `go test -count=1 -cover ./internal/config` 88.1%
+- files: `internal/config/init.go`, `internal/config/init_test.go`
+- risk: tier 1 (`rsc risk --base 48e5093 --json`: `classes: ["default","docs"]`, `reviewers: 1`)
+- review: ronda 1/3, 1 nit → L4 intentional (archivo parcial si Write falla; el error cita la ruta); VERDICT: pass
+- controls: tests ✅ (`go test ./...` 3 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (O_EXCL sin sobrescritura; 0600 en POSIX; aserción de permisos consciente de plataforma por Q4) · traceability ✅ (AC4)
+- decision: aserción de permisos 0600 solo en POSIX (Windows ignora bits POSIX en OpenFile); la exclusividad O_EXCL sí se verifica en Windows
