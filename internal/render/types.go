@@ -44,11 +44,12 @@ type ConfigShowJSON struct {
 
 // DoctorJSON is the stable JSON payload for `gandalf doctor --json`.
 type DoctorJSON struct {
-	SchemaVersion string               `json:"schema_version"`
-	Command       string               `json:"command"`
-	Checks        []doctor.CheckResult `json:"checks"`
-	Failures      int                  `json:"failures"`
-	Warnings      int                  `json:"warnings"`
+	SchemaVersion string                     `json:"schema_version"`
+	Command       string                     `json:"command"`
+	Checks        []doctor.CheckResult       `json:"checks"`
+	Failures      int                        `json:"failures"`
+	Warnings      int                        `json:"warnings"`
+	Executors     []doctor.ExecutorDiagnosis `json:"executors,omitempty"`
 }
 
 // MemoryQueryView carries data for rendering `gandalf memory query`.

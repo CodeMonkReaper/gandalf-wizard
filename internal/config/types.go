@@ -81,12 +81,20 @@ func ValidateProjectID(id string) error {
 
 // IsForbiddenCredentialKey reports whether a config key attempts to store a credential.
 func IsForbiddenCredentialKey(key string) bool {
-	switch strings.ToLower(strings.TrimSpace(key)) {
-	case "api_key", "token", "secret", "password", "credential", "romero_api_key":
-		return true
-	default:
+	k := strings.ToLower(strings.TrimSpace(key))
+	if k == "credential_env" {
 		return false
 	}
+	switch k {
+	case "api_key", "token", "secret", "password", "credential", "romero_api_key":
+		return true
+	}
+	for _, sub := range []string{"_api_key", "_token", "_secret", "_password", "_credential", "apikey"} {
+		if strings.Contains(k, sub) {
+			return true
+		}
+	}
+	return false
 }
 
 // TrackedValue holds a resolved configuration value alongside its source layer.
@@ -102,6 +110,7 @@ type EffectiveConfig struct {
 	Caller            TrackedValue[string]
 	RomeroBaseURL     TrackedValue[string]
 	RomeroTimeout     TrackedValue[time.Duration]
+	Router            RouterPolicy
 	APIKeyPresent     bool
 	APIKeyOrigin      Origin
 	ProjectConfigPath string

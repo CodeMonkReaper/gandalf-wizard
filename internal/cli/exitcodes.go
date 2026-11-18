@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/romero"
+	"github.com/CodeMonkReaper/gandalf-wizard/internal/router"
 )
 
 // Exit codes specified by the cli-gandalf specification (Table 5).
@@ -18,6 +19,15 @@ const (
 	ExitPartialQuery    = 5
 	ExitIncompleteQuery = 6
 	ExitDoctorFailed    = 7
+)
+
+// Router exit codes specified by the router-02 specification: 8 when no
+// profile is eligible, 9 when every eligible candidate failed, and 10 when
+// the invocation was canceled. Codes 0-7 keep their Foundation meaning.
+const (
+	ExitNoEligible = 8
+	ExitExhausted  = 9
+	ExitCanceled   = 10
 )
 
 // Dependencies injects runtime capabilities so CLI commands can be tested in-process.
@@ -33,4 +43,7 @@ type Dependencies struct {
 	HTTPClient    *http.Client
 	ReadPort      romero.RomeroReadPort
 	StatusPort    romero.RomeroStatusPort
+	// RouterRegistry overrides the executor adapter wiring; nil wires the
+	// production adapters.
+	RouterRegistry *router.Registry
 }

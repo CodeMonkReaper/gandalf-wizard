@@ -50,6 +50,7 @@ func RenderConfigShow(w io.Writer, view ConfigShowView, asJSON bool) error {
 }
 
 // RenderDoctor writes the `gandalf doctor` output as labeled check lines or stable JSON.
+// Router executors are informational: they never add to the failure count.
 func RenderDoctor(w io.Writer, report doctor.Report, asJSON bool) error {
 	if asJSON {
 		checks := make([]doctor.CheckResult, 0, len(report.Checks))
@@ -60,6 +61,7 @@ func RenderDoctor(w io.Writer, report doctor.Report, asJSON bool) error {
 			Checks:        checks,
 			Failures:      report.Failures,
 			Warnings:      report.Warnings,
+			Executors:     report.Executors,
 		})
 	}
 
@@ -71,6 +73,24 @@ func RenderDoctor(w io.Writer, report doctor.Report, asJSON bool) error {
 		}
 	}
 	fmt.Fprintf(&b, "Resultado: fallos=%d avisos=%d\n", report.Failures, report.Warnings)
+	if len(report.Executors) > 0 {
+		b.WriteString("\nEjecutores del router:\n")
+		for _, e := range report.Executors {
+			installed := "no instalado"
+			if e.Installed {
+				installed = "instalado"
+			}
+			authorized := "no autorizado"
+			if e.Authorized {
+				authorized = "autorizado"
+			}
+			line := fmt.Sprintf("- %s: %s, %s, autenticación %s, solo texto %s", e.ID, installed, authorized, e.Auth, e.TextOnly)
+			if e.Reason != "" {
+				line += fmt.Sprintf(" (%s)", e.Reason)
+			}
+			b.WriteString(line + "\n")
+		}
+	}
 	_, err := io.WriteString(w, b.String())
 	return err
 }
