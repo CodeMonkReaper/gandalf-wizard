@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/cli"
@@ -23,7 +24,11 @@ func main() {
 		LookPath:      exec.LookPath,
 		DefaultCaller: defaultCaller,
 	}
-	os.Exit(cli.Run(context.Background(), os.Args[1:], deps))
+	// Ctrl+C (and Ctrl+Break on Windows) cancels the context so a running
+	// attempt stops and the CLI exits with the canceled code.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	os.Exit(cli.Run(ctx, os.Args[1:], deps))
 }
 
 func workDir() string {

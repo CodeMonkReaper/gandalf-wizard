@@ -116,3 +116,9 @@
 .vibe/skills/go
 .codex/rsc/go
 .agents/skills/go
+.vibe/agents/architect.toml
+.vibe/agents/debugger.toml
+.vibe/agents/reviewer.toml
+.vibe/agents/tester.toml
+.vibe/config.toml
+gandalf.exe

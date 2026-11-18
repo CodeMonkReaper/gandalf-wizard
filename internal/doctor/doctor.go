@@ -29,6 +29,21 @@ func Run(ctx context.Context, input Input) Report {
 			report.Warnings++
 		}
 	}
+
+	if len(input.RouterExecutors) > 0 {
+		report.Executors = make([]ExecutorDiagnosis, 0, len(input.RouterExecutors))
+		for _, ev := range input.RouterExecutors {
+			report.Executors = append(report.Executors, ExecutorDiagnosis{
+				ID:         ev.Executor.ID,
+				Kind:       string(ev.Executor.Kind),
+				Installed:  ev.Probe.Installed,
+				Authorized: ev.Executor.Authorized,
+				Auth:       string(ev.Probe.Auth),
+				TextOnly:   string(ev.Probe.TextOnly),
+				Reason:     ev.Probe.Reason,
+			})
+		}
+	}
 	return report
 }
 

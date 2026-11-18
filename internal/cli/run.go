@@ -13,6 +13,7 @@ import (
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/harness"
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/render"
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/romero"
+	"github.com/CodeMonkReaper/gandalf-wizard/internal/router"
 )
 
 const usageText = `Uso: gandalf <subcomando> [flags]
@@ -24,8 +25,13 @@ Subcomandos:
   config init --project <id>   Crea la configuración del proyecto (nunca sobrescribe)
   doctor [--json]              Diagnostica el entorno (solo lectura)
   memory query [--json] <pregunta>  Consulta la memoria del proyecto en ROMERO
+  models list [--json]         Muestra el catálogo de perfiles del router
+  route [--json] [--complexity <baja|media|alta>] [--risk <bajo|medio|alto>] <tarea>
+                               Elige un perfil y explica por qué (no ejecuta)
+  run [--json] [--complexity <baja|media|alta>] [--risk <bajo|medio|alto>] [--profile <perfil>] <tarea>
+                               Ejecuta la tarea con el perfil elegido y fallback
 
-Flags de anulación (config show, doctor, memory query):
+Flags de anulación (config show, doctor, memory query, models, route, run):
   --project <id>        Proyecto activo para esta ejecución
   --caller <id>         Identidad del solicitante
   --romero-url <url>    Dirección de ROMERO
@@ -52,6 +58,12 @@ func Run(ctx context.Context, args []string, deps Dependencies) int {
 		return runDoctor(ctx, args[1:], deps)
 	case "memory":
 		return runMemory(ctx, args[1:], deps)
+	case "models":
+		return runModels(ctx, args[1:], deps)
+	case "route":
+		return runRoute(ctx, args[1:], deps)
+	case "run":
+		return runRun(ctx, args[1:], deps)
 	default:
 		fmt.Fprintf(deps.Stderr, "error: subcomando desconocido %q\n\n%s", args[0], usageText)
 		return ExitUsageError
@@ -239,6 +251,13 @@ func runDoctor(ctx context.Context, args []string, deps Dependencies) int {
 		APIKeyPresent: deps.getenv(config.EnvKeyRomeroAPIKey) != "",
 		StatusPort:    deps.statusPort(cfg),
 		HarnessReport: harnessReport,
+	}
+	if cfgErr == nil {
+		// The doctor only reports the router executors' local state; the
+		// local-only catalog probes without spending quota.
+		reg := deps.routerRegistryFor(cfg.Router)
+		catalog := router.Build(ctx, cfg.Router, reg, router.DiscoveryLocalOnly)
+		input.RouterExecutors = catalog.Executors
 	}
 
 	dctx := ctx
