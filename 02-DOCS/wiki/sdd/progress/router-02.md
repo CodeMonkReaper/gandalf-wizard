@@ -49,3 +49,15 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
 - T008 · [#24](https://github.com/CodeMonkReaper/gandalf-wizard/issues/24)
 - T009 · [#25](https://github.com/CodeMonkReaper/gandalf-wizard/issues/25)
 - T010 · [#26](https://github.com/CodeMonkReaper/gandalf-wizard/issues/26)
+
+## T001 — 2026-11-18
+- status: complete · issue [#17](https://github.com/CodeMonkReaper/gandalf-wizard/issues/17) cerrada con close review
+- red: `go test ./internal/config -run TestRouterPolicy -count=1` falló por política vacía (índice fuera de rango: `Load` aún no poblaba `Router`)
+- green: misma suite ok, 21 subtests
+- files: `internal/config/router.go`, `internal/config/router_test.go`, `internal/config/load.go`, `internal/config/types.go`
+- commit: `0745c24` (base `146428a`)
+- risk: tier 1 (`rsc risk` sobre el diff real) — 1 revisor
+- review: 1 reportado → 1 único → 0 blocker/should-fix; 1 nit (L11, razón de error inexacta en URL malformada) corregido en el mismo commit
+- controls: tests ✅ (`go test ./...` 6 paquetes ok) · build ✅ (`go vet ./...`) · security ✅ (solo nombres de variables de credenciales; centinela verificado en política y errores) · traceability ✅ (AC5, AC13, AC14, AC16, AC17)
+- reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
+- errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; `gofmt -l .` reporta el falso positivo CRLF/LF preexistente documentado en la retro de cli-gandalf
