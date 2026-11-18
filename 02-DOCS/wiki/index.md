@@ -9,7 +9,7 @@ topic: harness
 
 # Conocimiento del proyecto
 
-Al retomar, leer el [checkpoint](sdd/sessions/2026-11-17-entorno-rsc.md), después los documentos necesarios para la tarea.
+Al retomar, leer el [checkpoint vigente](sdd/sessions/2026-11-18-post-merge.md) (post-merge; anterior: [2026-11-17](sdd/sessions/2026-11-17-entorno-rsc.md)), después los documentos necesarios para la tarea.
 
 - Producto: [contexto maestro](../../gandalf-wizard-contexto-maestro.md), inventario conceptual, no especificación aprobada.
 - Harness: [instalación y capacidades](harness/installation.md), [plan generado](harness/installation-plan.md), [decisiones](harness/decisions.md).
