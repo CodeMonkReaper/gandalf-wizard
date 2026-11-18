@@ -94,3 +94,13 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/5
 - review: ronda 1/3, 1 nit → L6 fixed (mensaje «checkStatus status N» en vez de «status status N»); VERDICT: pass
 - controls: tests ✅ (`go test ./...` 5 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (token solo en encabezado; errores sin eco del secreto; decodeCapped con tope 4 MiB) · traceability ✅ (AC6, AC7)
 - decision: los errores de transporte los envuelve ya `do` con ErrServiceInterrupted (igual que Search); CheckStatus los devuelve directos
+
+## T007 — 2026-11-18
+- status: complete (commit `433d9f4`, sub-Issue #11)
+- red: `go test -v ./internal/doctor -run TestDoctorChecks` falló (stub con report vacío)
+- green: mismo comando en PASS; `go test -count=1 -cover ./internal/doctor` 97.9%
+- files: `internal/doctor/doctor.go`, `internal/doctor/doctor_test.go`
+- risk: tier 1 (`rsc risk --base 5a35907 --json`: `classes: ["default","docs"]`, `reviewers: 1`)
+- review: ronda 1/3, 0 hallazgos nuevos; VERDICT: pass. Corrección durante el rojo: el test esperaba harness FAIL sin detecciones, pero la referencia 4 de la spec muestra [OK] informativo — la spec manda
+- controls: tests ✅ (`go test ./...` 6 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (credencial solo como presencia; detalle de configuración saneado por ConfigError) · traceability ✅ (AC3, AC6, AC7, AC8)
+- decision: check de harness es informativo (nunca FAIL) según referencia 4; romero.conexión no se sondea sin URL y falla con remedio explícito
