@@ -23,6 +23,6 @@ topic: sdd
 
 ## Siguiente acción
 
-Foundation 0.1 está cerrada. El contexto maestro (`gandalf-wizard-contexto-maestro.md`) tiene propuestas pendientes de spec; al retomar, abrir issue nuevo y empezar con specify. Q1-Q4 (review-after) quedaron listados en el PR #14 para consideración del propietario.
+Foundation 0.1 está cerrada con el alcance entregado. La sincronización reproducible de skills y patrones (prevista en 0.1 por el roadmap orientativo) queda **diferida a la siguiente etapa** por decisión del propietario ([decisiones](../decisions.md)); incluirla al priorizar el próximo `specify`. El contexto maestro (`gandalf-wizard-contexto-maestro.md`) tiene propuestas pendientes de spec; al retomar, abrir issue nuevo y empezar con specify. Q1-Q4 (review-after) quedaron listados en el PR #14 para consideración del propietario.
 
 - Antes de relevar: este checkpoint queda enlazado desde [wiki/index.md](../index.md).
