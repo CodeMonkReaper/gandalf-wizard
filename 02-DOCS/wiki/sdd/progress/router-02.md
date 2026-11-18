@@ -98,3 +98,17 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
 - decisión de diseño: `Run` toma `getenv func(string) string` como sexto parámetro (registrada en [decisions.md](../decisions.md)); el esfuerzo nativo se resuelve como `profile.Efforts[choice.Effort]` (el orquestador traduce key→nativo); la cancelación del padre gana sobre el plazo del hijo y sobre el éxito; el dedup por ID de perfil y el tope manual de 1 intento aplican antes de ejecutar
 - reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
 - errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un error de compilación del test (`a1` fuera de ámbito en `check`) y un colgado del RED (`<-started` sin plazo con el stub) se corrigieron antes del verde
+
+## T005 — 2026-11-18
+- status: complete · issue [#20](https://github.com/CodeMonkReaper/gandalf-wizard/issues/20) cerrada con close review
+- red: `go test ./internal/router/antigravity -run '^TestAdapter$' -count=1` falló por aserción en 21 de 23 subtests (los 2 restantes esperan `unproven`, el default del stub); sin pánico tras añadir guardas de `nil`
+- green: misma suite ok, 23 subtests (incluye cancelación y plazo con proceso real compilado en la prueba)
+- files: `internal/router/antigravity/adapter.go`, `internal/router/antigravity/adapter_test.go`
+- commit: `5fff5e9` (base `f05aa62`)
+- risk: tier 1 (`rsc risk` sobre el diff real) — 1 revisor
+- review: 1 reportado → 1 único → 0 blocker/should-fix; 1 nit (L13, `--print-timeout` redondeaba a 0s = sin límite en el margen sub-segundo) corregido en el mismo commit (amend)
+- controls: tests ✅ (`go test ./...` 8 paquetes ok) · build ✅ (`go vet ./...`) · security ✅ (sin autoaprobación; entorno del hijo sin credenciales de otros proveedores ni ROMERO; stderr y diagnósticos crudos nunca salen; sesión nativa intacta) · traceability ✅ (AC2, AC5, AC6, AC11–AC13, AC15, AC18)
+- decisiones de diseño: registradas en [decisions.md](../decisions.md) — indicador de sesión por presencia de `~/.gemini/google_accounts.json`, receta de solo texto con `--settings` de denegación + `--disable-slash-commands` + `--sandbox`, `VerifyTextOnly` centinela para T010, `--effort` solo con esfuerzo nativo declarado, exclusión de credenciales por patrones, `--print-timeout` reflejando el plazo
+- investigación documental: ayuda del binario 1.5.10 contrastada con la documentación oficial (headless, permisos CLI); `--settings` valida claves sin cuota; `agy models` emite TSV `slug→Nombre (Esfuerzo)`
+- reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
+- errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un error de compilación (`exec.LookPath` devuelve `(string, error)`, no `(string, bool)`) y un pánico del rojo (`f.last()` nil con el stub) se corrigieron antes del verde
