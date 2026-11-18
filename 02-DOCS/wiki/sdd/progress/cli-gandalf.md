@@ -84,3 +84,13 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/5
 - risk: tier 1 (`rsc risk --base b1e62c8 --json`: `classes: ["default","docs"]`, `reviewers: 1`)
 - review: ronda 1/3, 0 hallazgos; VERDICT: pass (solo lectura probada por snapshot de árbol, fallback agy, nil-safe)
 - controls: tests ✅ (`go test ./...` 5 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (solo lookPath inyectable y os.Stat; cero escrituras) · traceability ✅ (AC8)
+
+## T006 — 2026-11-18
+- status: complete (commit `c651e08`, sub-Issue #10)
+- red: `go test -v ./internal/romero -run TestRomeroStatusClient` falló en 7 aserciones (stub + doble compilando)
+- green: mismo comando en PASS; `go test -count=1 -cover ./internal/romero` 91.8%
+- files: `internal/romero/status_client.go`, `internal/romero/status_client_test.go`
+- risk: tier 1 (`rsc risk --base 1ab53ee --json`: `classes: ["default","docs"]`, `reviewers: 1`)
+- review: ronda 1/3, 1 nit → L6 fixed (mensaje «checkStatus status N» en vez de «status status N»); VERDICT: pass
+- controls: tests ✅ (`go test ./...` 5 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (token solo en encabezado; errores sin eco del secreto; decodeCapped con tope 4 MiB) · traceability ✅ (AC6, AC7)
+- decision: los errores de transporte los envuelve ya `do` con ErrServiceInterrupted (igual que Search); CheckStatus los devuelve directos
