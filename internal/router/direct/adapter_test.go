@@ -153,8 +153,8 @@ func TestAdapter(t *testing.T) {
 				if p.TextOnly != router.TextOnlyEnforced {
 					t.Fatalf("esperaba text-only enforced por diseño, got %s", p.TextOnly)
 				}
-				if p.Reason == "" {
-					t.Fatal("falta el motivo del sondeo")
+				if p.Reason != "" {
+					t.Fatalf("el sondeo sano no debe llevar motivo (enmascara la causa del catálogo): %q", p.Reason)
 				}
 			},
 		},

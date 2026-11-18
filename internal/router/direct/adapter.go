@@ -74,11 +74,13 @@ func (a *Adapter) Probe(ctx context.Context, ex config.RouterExecutor) router.Pr
 			auth = router.AuthMissing
 		}
 	}
+	// Reason stays empty on the healthy path: the catalog fills the
+	// availability reason with the specific cause (falta la credencial,
+	// autenticación desconocida), and an adapter reason would mask it.
 	return router.Probe{
 		Installed: true,
 		Auth:      auth,
 		TextOnly:  router.TextOnlyEnforced,
-		Reason:    "protocolo " + ex.Protocol + " sin herramientas ni streaming por diseño",
 	}
 }
 
