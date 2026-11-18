@@ -1,0 +1,60 @@
+{
+  "timestampUtc": "2026-11-18T01:25:00Z",
+  "kind": "live-integration",
+  "feature": "consulta-memoria-romero (Issue #2)",
+  "romero": {
+    "repo": "CodeMonkReaper/romero",
+    "revision": "3f46f9a322b3b44b946889d8474ac835b98bf9fb",
+    "localPath": "C:/Users/luis_/orca/projects/romero",
+    "profile": "lite",
+    "baseURL": "http://127.0.0.1:8420",
+    "postgres": "docker compose up -d romero-postgres (pgvector/pg17, 127.0.0.1:54329, healthy)",
+    "tenant": "gandalf-test (3f885c3d-aa09-45c9-9a58-804fe4ea0940)",
+    "project": "faro (b5af64b7-f7b7-4ab8-9a39-f37bbd8341af)",
+    "principalType": "orchestrator (admin)",
+    "apiKeyPrefix": "rmr_orchestrator_486"
+  },
+  "seed": {
+    "memoryId": "5e900c47-ef03-4164-8980-4a7f9e419de5",
+    "summary": "Conservamos los informes de prueba para comparar entregas entre versiones.",
+    "epistemicStatus": "observed",
+    "primarySourceID": "b68c0b4c-5a87-45ac-908d-3fe01fc03b1d",
+    "captureEndpoint": "POST /api/v1/memories"
+  },
+  "test": {
+    "name": "TestIntegration_RomeroRealInstance",
+    "commit": "6353d60",
+    "command": "ROMERO_BASE_URL=http://127.0.0.1:8420 ROMERO_API_KEY=*** ROMERO_PROJECT_ID=b5af64b7-... go test -v -count=1 ./internal/romero -run TestIntegration_RomeroRealInstance",
+    "result": "PASS",
+    "outcome": {
+      "status": "ok",
+      "degraded": true,
+      "degradationNotice": "Búsqueda en modo degradado",
+      "rows": 1,
+      "row": {
+        "memoryRef": "5e900c47-ef03-4164-8980-4a7f9e419de5",
+        "sourceRef": "b68c0b4c-5a87-45ac-908d-3fe01fc03b1d",
+        "epistemicState": "observed",
+        "vigencia": "vigente",
+        "summary": "Conservamos los informes de prueba para comparar entregas entre versiones."
+      },
+      "auditTrail": ["search", "getDetail"]
+    }
+  },
+  "deviation": {
+    "plan": "scopes: [\"project\"]",
+    "actual": "scopes: [\"project_shared\"]",
+    "reason": "ROMERO rev 3f46f9a no define el scope 'project'; los scopes válidos son agent_private, task_shared, project_shared, org_shared, global_public (internal/domain/identity/identity.go). El plan se corrigió en rest_client.go."
+  },
+  "limits": [
+    "Perfil lite: degraded_mode=true porque no hay motor de embeddings (GPU) corriendo; la búsqueda aún devuelve resultados por match textual.",
+    "Solo se probó AC1-like (search+detail con datos reales). AC2-AC9 siguen cubiertos por la suite de aceptación con fake.",
+    "No se probó superseded real ni access-denied real contra la instancia."
+  ],
+  "gate": {
+    "gofmt": "clean",
+    "goVet": "PASS",
+    "goTest": "PASS (16 tests incl. integration)",
+    "coverage": "90.8%"
+  }
+}
