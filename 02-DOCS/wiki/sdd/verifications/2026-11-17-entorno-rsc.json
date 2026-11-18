@@ -1,0 +1,1640 @@
+{
+  "codexGitAllowRulesPresent": false,
+  "guardAdapterProbes": [
+    {
+      "inputOnly": "git status",
+      "response": "",
+      "exitCode": 0
+    },
+    {
+      "inputOnly": "git reset --hard",
+      "response": "{\"decision\":\"deny\",\"reason\":\"rsc: this command throws away uncommitted work, and drops commits when it moves back, with no undo (git reset --hard). It cannot be undone, so the person confirms it.\"}",
+      "exitCode": 0
+    }
+  ],
+  "gitPermissions": false,
+  "context7Disabled": true,
+  "skillCopies": [
+    {
+      "identical": true,
+      "skill": "analyze",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "analyze",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "analyze",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "asdd",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "asdd",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "asdd",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "automation-strategy",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "automation-strategy",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "automation-strategy",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "clarify",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "clarify",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "clarify",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "connect-tool",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "connect-tool",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "connect-tool",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "constitution",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "constitution",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "constitution",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "debug",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "debug",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "debug",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "decision-challenge",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "decision-challenge",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "decision-challenge",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "deprecation",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "deprecation",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "deprecation",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "design",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "design",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "design",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "fable-operator",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "fable-operator",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "fable-operator",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "ftd",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "ftd",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "ftd",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "harness",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "harness",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "harness",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "idea-refinement",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "idea-refinement",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "idea-refinement",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "implement",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "implement",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "implement",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "init",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "init",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "init",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "orient",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "orient",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "orient",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "parallel",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "parallel",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "parallel",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "plan",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "plan",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "plan",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "review",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "review",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "review",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "sdd-init",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "sdd-init",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "sdd-init",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "security-audit",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "security-audit",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "security-audit",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "ship",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "ship",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "ship",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "simplify-code",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "simplify-code",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "simplify-code",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "source-grounded-development",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "source-grounded-development",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "source-grounded-development",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "specify",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "specify",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "specify",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "suggest",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "suggest",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "suggest",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "tasks",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "tasks",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "tasks",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "tidy",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "tidy",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "tidy",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "unslop",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "unslop",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "unslop",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "ux",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "ux",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "ux",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "verify",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "verify",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "verify",
+      "targetRoot": ".agents/skills"
+    },
+    {
+      "identical": true,
+      "skill": "worktrees",
+      "targetRoot": ".vibe/skills"
+    },
+    {
+      "identical": true,
+      "skill": "worktrees",
+      "targetRoot": ".codex/rsc"
+    },
+    {
+      "identical": true,
+      "skill": "worktrees",
+      "targetRoot": ".agents/skills"
+    }
+  ],
+  "knowledgeSyncDisabled": true,
+  "planId": "12fae90dc27e149c2fa4099d8e4113c84f45d93f934bd07cd01b3bb84012e859",
+  "forkSource": "github:CodeMonkReaper/rsc-harness-vibe#2b37e98870eaaca9980bf903381d5ae5aacd5280",
+  "note": "Guard probes feed JSON only; they do not execute the command in tool_input.",
+  "targets": [
+    {
+      "doctor": {
+        "target": "vibe",
+        "installed": [
+          "analyze",
+          "asdd",
+          "automation-strategy",
+          "clarify",
+          "connect-tool",
+          "constitution",
+          "debug",
+          "decision-challenge",
+          "deprecation",
+          "design",
+          "fable-operator",
+          "ftd",
+          "harness",
+          "idea-refinement",
+          "implement",
+          "init",
+          "orient",
+          "parallel",
+          "plan",
+          "review",
+          "sdd-init",
+          "security-audit",
+          "ship",
+          "simplify-code",
+          "source-grounded-development",
+          "specify",
+          "suggest",
+          "tasks",
+          "tidy",
+          "unslop",
+          "ux",
+          "verify",
+          "worktrees"
+        ],
+        "missing": [],
+        "hookWired": true,
+        "vibeGuard": {
+          "state": "configured"
+        },
+        "manifestSkills": 273,
+        "backups": {
+          "exists": true,
+          "count": 10,
+          "latest": "20261117-212352-sync-antigravity"
+        },
+        "contextBudget": {
+          "scopes": [],
+          "notApplicable": [
+            "sessionStart",
+            "perTurn"
+          ],
+          "sessionStartBytes": 0,
+          "perTurnBytes": 0,
+          "descriptionsBytes": 15055,
+          "installedSkills": 33,
+          "topContributors": {
+            "bodies": [
+              {
+                "id": "specify",
+                "bytes": 33112
+              },
+              {
+                "id": "review",
+                "bytes": 29219
+              },
+              {
+                "id": "harness",
+                "bytes": 25647
+              },
+              {
+                "id": "implement",
+                "bytes": 25464
+              },
+              {
+                "id": "ship",
+                "bytes": 25194
+              }
+            ],
+            "descriptions": [
+              {
+                "id": "specify",
+                "bytes": 721
+              },
+              {
+                "id": "tidy",
+                "bytes": 659
+              },
+              {
+                "id": "asdd",
+                "bytes": 642
+              },
+              {
+                "id": "suggest",
+                "bytes": 606
+              },
+              {
+                "id": "review",
+                "bytes": 602
+              }
+            ]
+          },
+          "findings": [],
+          "note": "This target has no hook injection; only skill weight applies."
+        },
+        "worktreeCleanup": {
+          "state": "armed"
+        },
+        "worktreeHygiene": {
+          "ignored": true,
+          "leftovers": []
+        },
+        "ownSkills": {
+          "present": [],
+          "missing": [],
+          "declared": []
+        },
+        "sello": {
+          "enabled": false
+        },
+        "asddGate": {
+          "state": "not-installed"
+        },
+        "gitmojiGuard": "deferred",
+        "emoji": "on",
+        "optOutsNotApplied": [],
+        "versions": {
+          "cli": "4.1.7",
+          "installed": "4.1.7",
+          "behind": false
+        },
+        "automationGaps": 0,
+        "memory": {
+          "supportedMode": "unsupported",
+          "mode": "unsupported",
+          "status": "unsupported",
+          "reason": "no-local-lifecycle",
+          "missing": [],
+          "tracked": []
+        },
+        "missingAgents": [],
+        "invalidAgentTools": [],
+        "agentCollisions": [],
+        "agentsEditedByYou": [],
+        "agentModel": "inherit",
+        "missingCommands": [],
+        "commandOrphans": [],
+        "commandCollisions": [],
+        "opencodePluginsOutdated": [],
+        "pending": [
+          {
+            "id": "constitution-draft",
+            "path": "02-DOCS/wiki/sdd/constitution.md",
+            "action": "Complete it with the `constitution` phase before the first SDD feature; ratifying removes `status: draft`."
+          }
+        ],
+        "onboarding": {
+          "status": "pending",
+          "missing": [],
+          "pending": [
+            "02-DOCS/wiki/sdd/constitution.md"
+          ],
+          "action": "Complete 02-DOCS/wiki/sdd/constitution.md with the `constitution` phase (tell your agent \"constitution\") before the first SDD feature; ratifying removes `status: draft`."
+        },
+        "healthy": true
+      },
+      "target": "vibe",
+      "capabilities": {
+        "memory": {
+          "supportedMode": "unsupported",
+          "mode": "unsupported",
+          "status": "unsupported",
+          "reason": "no-local-lifecycle",
+          "missing": [],
+          "tracked": []
+        },
+        "agentsProject": [
+          {
+            "id": "developer",
+            "scope": "project",
+            "path": "C:\\Users\\luis_\\orca\\projects\\gandalf_wizard\\.vibe\\agents\\developer.toml"
+          },
+          {
+            "id": "finding-verifier",
+            "scope": "project",
+            "path": "C:\\Users\\luis_\\orca\\projects\\gandalf_wizard\\.vibe\\agents\\finding-verifier.toml"
+          },
+          {
+            "id": "refuter-correctness",
+            "scope": "project",
+            "path": "C:\\Users\\luis_\\orca\\projects\\gandalf_wizard\\.vibe\\agents\\refuter-correctness.toml"
+          },
+          {
+            "id": "refuter-security",
+            "scope": "project",
+            "path": "C:\\Users\\luis_\\orca\\projects\\gandalf_wizard\\.vibe\\agents\\refuter-security.toml"
+          },
+          {
+            "id": "refuter-tests",
+            "scope": "project",
+            "path": "C:\\Users\\luis_\\orca\\projects\\gandalf_wizard\\.vibe\\agents\\refuter-tests.toml"
+          }
+        ],
+        "skillsProject": [
+          {
+            "id": "analyze",
+            "scope": "project",
+            "description": "Use when constitution, spec, plan and tasks al… NOT the task breakdown (that is `tasks`), NOT the coding (that is `implement`), NOT the post-code test gate (that is `verify`), NOT resolving ambiguity (that is `clarify`)."
+          },
+          {
+            "id": "asdd",
+            "scope": "project",
+            "description": "Use when a feature or substantial change should go from idea to shipped, verified software… NOT a single phase (it dispatches), NOT small authorised changes (that is `ftd`), NOT the workspace harness (that is `harness`)."
+          },
+          {
+            "id": "automation-strategy",
+            "scope": "project",
+            "description": "Use when deciding whether a process is worth automating, sizing ROI and build-vs-buy, choosin… NOT building the flow (that is `automation-flows`, or `n8n` / `make` / `zapier` / `power-automate` to drive a live platform)."
+          },
+          {
+            "id": "clarify",
+            "scope": "project",
+            "description": "Use when a spec exists and must be de-risked before planning — run the gap checklist over its four ASDD questions and out-of-scope, ask only what changes wha… NOT the cross-artifact consistency check (that is `analyze`)."
+          },
+          {
+            "id": "connect-tool",
+            "scope": "project",
+            "description": "Use when the user names a specific tool to connect to the agent (an ERP, accounting or desktop progr… NOT a full typed API client (that is `api-connector-builder`), NOT a whole-workspace tooling scan (that is `harness`)."
+          },
+          {
+            "id": "constitution",
+            "scope": "project",
+            "description": "Use when setting or amending a project's non-negotiables — stack canon, quality bars, conventions… NOT a feature spec (that is `specify`), NOT the technical plan (that is `plan`), NOT the wiki itself (that is `harness`)."
+          },
+          {
+            "id": "debug",
+            "scope": "project",
+            "description": "Use when something is broken — a failing or flaky test, crash,… NOT a feature to spec or build (that is `specify`/`implement`), NOT the lint/test gate (that is `verify`), NOT adversarial diff reading (that is `review`)."
+          },
+          {
+            "id": "decision-challenge",
+            "scope": "project",
+            "description": "Use when a high-impact plan, migration or architecture claim needs a bounded adversarial challenge before commitment. Isolat… NOT a finished-diff review (`review`/`code-review`), NOT SDD artifact consistency (`analyze`)."
+          },
+          {
+            "id": "deprecation",
+            "scope": "project",
+            "description": "Use when retiring a public API, feature, integration, service or legacy path without abandoning consumers. Inventories usage,… NOT live schema expand-contract (`db-migrations`), NOT replacement API design (`api-design`)."
+          },
+          {
+            "id": "design",
+            "scope": "project",
+            "description": "Use when designing, redesigning, restyling or reviewing a web page or app screen (landing, product site, portfolio, dashboard, docs) or when a UI looks generic… NOT the words (landing-copy), NOT flows or usability (ux)."
+          },
+          {
+            "id": "fable-operator",
+            "scope": "project",
+            "description": "Use when a substantive request needs verified, calibrated reasoning — analysis, diagnosis, review, adv… NOT casual chat (rigor theater), NOT the SDD gates `verify`, `debug`, `review`; this is the discipline beneath them."
+          },
+          {
+            "id": "ftd",
+            "scope": "project",
+            "description": "Use for ordinary authorised change — the default lane once the… NOT the full method (that is `asdd`), NOT the classification itself (that is the decisor in `suggest`), NOT a request for information, which writes nothing."
+          },
+          {
+            "id": "harness",
+            "scope": "project",
+            "description": "Use when governing a workspace's control plane, code or not — the `01-TOOLS/` tooling layer, the `02-DOCS/` chaos→knowledge wiki, the root Knowledge m… NOT the bootstrap front door (that is `init`, which hands off here)."
+          },
+          {
+            "id": "idea-refinement",
+            "scope": "project",
+            "description": "Use when a rough product, service, workflow or feature idea needs divergent options and assumption pressure-testing before it b… NOT requirements or acceptance criteria (`specify`), NOT market sizing (`market-research`)."
+          },
+          {
+            "id": "implement",
+            "scope": "project",
+            "description": "Use when an approved plan and task list exist and it is time to turn them into worki… NOT spec writing (that is `specify`), NOT planning (that is `plan`), NOT the closing whole-branch gate (stage 5: `verify` + `review`)."
+          },
+          {
+            "id": "init",
+            "scope": "project",
+            "description": "Use when starting from nothing or pointing rsc at an existing project — the front door. First asks one question — technical terms or analogies (analogies by def… NOT the scaffolder (that is `harness`), NOT a stack skill."
+          },
+          {
+            "id": "orient",
+            "scope": "project",
+            "description": "Always-on. How the harness talks to the person: STE-style short sentences, every answer understandable on its… NOT the missing-skill installer (that is `suggest`), NOT a text the user sends to others (that is `unslop`)."
+          },
+          {
+            "id": "parallel",
+            "scope": "project",
+            "description": "Use when two or more pieces of work are genuinely independent — disjoint files, no shared state, no ordering edge — an… NOT the isolation it runs in (that is `worktrees`), NOT the per-unit TDD loop (that is `implement`)."
+          },
+          {
+            "id": "plan",
+            "scope": "project",
+            "description": "Use when an approved, clarified spec must become a te… NOT the what/why spec (that is `specify`), NOT the ambiguity sweep (that is `clarify`), NOT the task breakdown (that is `tasks`), NOT the code (that is `implement`)."
+          },
+          {
+            "id": "review",
+            "scope": "project",
+            "description": "Use when a diff needs adversarial judgment in rsc ASDD — per task inside implement… NOT running lint/type/tests (that is `verify`), NOT the spec-less standalone pass (that is `code-review`), NOT merging (that is `ship`)."
+          },
+          {
+            "id": "sdd-init",
+            "scope": "project",
+            "description": "Use when calibrating an existing repo for the rsc SDD chain: detect stack, package manager, test r… NOT the dispatcher that routes SDD phases (that is `asdd`), NOT first-contact user/workspace bootstrap (that is `init`)."
+          },
+          {
+            "id": "security-audit",
+            "scope": "project",
+            "description": "Use when asking if a project, diff or feature is secure: security audit or review, vulnerabilities, injection (SQL, XSS), broken access control, auth and JWT, CORS, SSRF, upl… NOT agent guardrails (that is agent-safety)."
+          },
+          {
+            "id": "ship",
+            "scope": "project",
+            "description": "Use when a verified branch that passed its closing review has to land — the… NOT running the gates (that is `verify`), NOT reading the diff for defects (that is `review`), NOT shipping to a server (that is `deployment`)."
+          },
+          {
+            "id": "simplify-code",
+            "scope": "project",
+            "description": "Use when correct working code is unnecessarily hard to read, change or verify and needs behaviour-preserving simplification in a boun… NOT fixing a failure (`debug`), NOT read-only diff judgment (`review`/`code-review`)."
+          },
+          {
+            "id": "source-grounded-development",
+            "scope": "project",
+            "description": "Use when implementation or review depends on current version-specific framework, SDK, protocol or platform behaviour and mem… NOT a standalone cited memo (`research-ops`), NOT diagnosis of a reproduced failure (`debug`)."
+          },
+          {
+            "id": "specify",
+            "scope": "project",
+            "description": "Use when a feature, change, or product idea is still fuzzy and must… NOT the technical plan (that is `plan`), NOT the de-risking ambiguity sweep (that is `clarify`), NOT project-wide principles (that is `constitution`)."
+          },
+          {
+            "id": "suggest",
+            "scope": "project",
+            "description": "Always-on. Use whenever the current user turn would clearly benefit from an rsc skill that is not yet installed — detect the gap during normal agent use, name the skill, and (with a one-word confirm) install it via `npx…"
+          },
+          {
+            "id": "tasks",
+            "scope": "project",
+            "description": "Use when an approved plan needs slicing into an ordered task list before any code — the… NOT writing the plan (that is `plan`), NOT the consistency gate (that is `analyze`), NOT executing the tasks (that is `implement`)."
+          },
+          {
+            "id": "tidy",
+            "scope": "project",
+            "description": "Use when every repository in the workspac… NOT upgrading the rsc version (that is `npx @ericrisco/rsc upgrade`), NOT opening isolation for new work (that is `worktrees`), NOT landing one finished branch (that is `ship`)."
+          },
+          {
+            "id": "unslop",
+            "scope": "project",
+            "description": "Use when a text that leaves the session (email, post, README, message, landing copy) must sound like a person… NOT how the harness talks to the user (that is `orient`), NOT a reusable voice guide (that is `brand-voice`)."
+          },
+          {
+            "id": "ux",
+            "scope": "project",
+            "description": "Use when an app or SaaS must be easy to use: designing complete user flows, screens and every state, navigation, forms, onboarding, tables, dashboards, se… NOT the visual direction (design), NOT the words (landing-copy)."
+          },
+          {
+            "id": "verify",
+            "scope": "project",
+            "description": "Use when work is about to be called done — the ASDD evidence gate, in two modes: per task inside `implement`'s lo… NOT judging the diff by eye (that is `review`, spec-less `code-review`), NOT diagnosis (that is `debug`)."
+          },
+          {
+            "id": "worktrees",
+            "scope": "project",
+            "description": "Use when work is about to become commits and needs isolation first — check the tree state, then b… NOT what may run concurrently inside those workspaces (that is `parallel`), NOT the merge/cleanup after (that is `ship`)."
+          }
+        ]
+      }
+    },
+    {
+      "doctor": {
+        "target": "codex",
+        "installed": [
+          "analyze",
+          "asdd",
+          "automation-strategy",
+          "clarify",
+          "connect-tool",
+          "constitution",
+          "debug",
+          "decision-challenge",
+          "deprecation",
+          "design",
+          "fable-operator",
+          "ftd",
+          "harness",
+          "idea-refinement",
+          "implement",
+          "init",
+          "orient",
+          "parallel",
+          "plan",
+          "review",
+          "sdd-init",
+          "security-audit",
+          "ship",
+          "simplify-code",
+          "source-grounded-development",
+          "specify",
+          "suggest",
+          "tasks",
+          "tidy",
+          "unslop",
+          "ux",
+          "verify",
+          "worktrees"
+        ],
+        "missing": [],
+        "hookWired": true,
+        "manifestSkills": 273,
+        "backups": {
+          "exists": true,
+          "count": 10,
+          "latest": "20261117-212352-sync-antigravity"
+        },
+        "contextBudget": {
+          "scopes": [],
+          "notApplicable": [
+            "sessionStart",
+            "perTurn"
+          ],
+          "sessionStartBytes": 0,
+          "perTurnBytes": 0,
+          "descriptionsBytes": 15055,
+          "installedSkills": 33,
+          "topContributors": {
+            "bodies": [
+              {
+                "id": "specify",
+                "bytes": 33112
+              },
+              {
+                "id": "review",
+                "bytes": 29219
+              },
+              {
+                "id": "harness",
+                "bytes": 25647
+              },
+              {
+                "id": "implement",
+                "bytes": 25464
+              },
+              {
+                "id": "ship",
+                "bytes": 25194
+              }
+            ],
+            "descriptions": [
+              {
+                "id": "specify",
+                "bytes": 721
+              },
+              {
+                "id": "tidy",
+                "bytes": 659
+              },
+              {
+                "id": "asdd",
+                "bytes": 642
+              },
+              {
+                "id": "suggest",
+                "bytes": 606
+              },
+              {
+                "id": "review",
+                "bytes": 602
+              }
+            ]
+          },
+          "findings": [],
+          "note": "This target has no hook injection; only skill weight applies."
+        },
+        "worktreeCleanup": {
+          "state": "armed"
+        },
+        "worktreeHygiene": {
+          "ignored": true,
+          "leftovers": []
+        },
+        "ownSkills": {
+          "present": [],
+          "missing": [],
+          "declared": []
+        },
+        "sello": {
+          "enabled": false
+        },
+        "asddGate": {
+          "state": "not-installed"
+        },
+        "gitmojiGuard": "deferred",
+        "emoji": "on",
+        "optOutsNotApplied": [],
+        "versions": {
+          "cli": "4.1.7",
+          "installed": "4.1.7",
+          "behind": false
+        },
+        "automationGaps": 0,
+        "memory": {
+          "supportedMode": "full",
+          "mode": "full",
+          "status": "ready",
+          "reason": "hook-trust-required",
+          "missing": [],
+          "tracked": [],
+          "action": null,
+          "trustRequired": true,
+          "metrics": {
+            "sessions": [],
+            "total": {
+              "cost": null,
+              "toolCalls": null
+            },
+            "knownTotal": {
+              "cost": null,
+              "toolCalls": null
+            },
+            "unknown": {
+              "cost": 0,
+              "toolCalls": 0
+            }
+          }
+        },
+        "missingAgents": [],
+        "invalidAgentTools": [],
+        "agentCollisions": [],
+        "agentsEditedByYou": [],
+        "agentModel": "gpt-5.1-mini",
+        "missingCommands": [],
+        "commandOrphans": [],
+        "commandCollisions": [],
+        "opencodePluginsOutdated": [],
+        "pending": [
+          {
+            "id": "constitution-draft",
+            "path": "02-DOCS/wiki/sdd/constitution.md",
+            "action": "Complete it with the `constitution` phase before the first SDD feature; ratifying removes `status: draft`."
+          }
+        ],
+        "onboarding": {
+          "status": "pending",
+          "missing": [],
+          "pending": [
+            "02-DOCS/wiki/sdd/constitution.md"
+          ],
+          "action": "Complete 02-DOCS/wiki/sdd/constitution.md with the `constitution` phase (tell your agent \"constitution\") before the first SDD feature; ratifying removes `status: draft`."
+        },
+        "healthy": true
+      },
+      "target": "codex",
+      "capabilities": {
+        "memory": {
+          "supportedMode": "full",
+          "mode": "full",
+          "status": "ready",
+          "reason": "hook-trust-required",
+          "missing": [],
+          "tracked": [],
+          "action": null,
+          "trustRequired": true
+        },
+        "agentsProject": [
+          {
+            "id": "developer",
+            "scope": "project",
+            "path": "C:\\Users\\luis_\\orca\\projects\\gandalf_wizard\\.codex\\agents\\developer.toml"
+          },
+          {
+            "id": "finding-verifier",
+            "scope": "project",
+            "path": "C:\\Users\\luis_\\orca\\projects\\gandalf_wizard\\.codex\\agents\\finding-verifier.toml"
+          },
+          {
+            "id": "refuter-correctness",
+            "scope": "project",
+            "path": "C:\\Users\\luis_\\orca\\projects\\gandalf_wizard\\.codex\\agents\\refuter-correctness.toml"
+          },
+          {
+            "id": "refuter-security",
+            "scope": "project",
+            "path": "C:\\Users\\luis_\\orca\\projects\\gandalf_wizard\\.codex\\agents\\refuter-security.toml"
+          },
+          {
+            "id": "refuter-tests",
+            "scope": "project",
+            "path": "C:\\Users\\luis_\\orca\\projects\\gandalf_wizard\\.codex\\agents\\refuter-tests.toml"
+          }
+        ],
+        "skillsProject": [
+          {
+            "id": "analyze",
+            "scope": "project",
+            "description": "Use when constitution, spec, plan and tasks al… NOT the task breakdown (that is `tasks`), NOT the coding (that is `implement`), NOT the post-code test gate (that is `verify`), NOT resolving ambiguity (that is `clarify`)."
+          },
+          {
+            "id": "asdd",
+            "scope": "project",
+            "description": "Use when a feature or substantial change should go from idea to shipped, verified software… NOT a single phase (it dispatches), NOT small authorised changes (that is `ftd`), NOT the workspace harness (that is `harness`)."
+          },
+          {
+            "id": "automation-strategy",
+            "scope": "project",
+            "description": "Use when deciding whether a process is worth automating, sizing ROI and build-vs-buy, choosin… NOT building the flow (that is `automation-flows`, or `n8n` / `make` / `zapier` / `power-automate` to drive a live platform)."
+          },
+          {
+            "id": "clarify",
+            "scope": "project",
+            "description": "Use when a spec exists and must be de-risked before planning — run the gap checklist over its four ASDD questions and out-of-scope, ask only what changes wha… NOT the cross-artifact consistency check (that is `analyze`)."
+          },
+          {
+            "id": "connect-tool",
+            "scope": "project",
+            "description": "Use when the user names a specific tool to connect to the agent (an ERP, accounting or desktop progr… NOT a full typed API client (that is `api-connector-builder`), NOT a whole-workspace tooling scan (that is `harness`)."
+          },
+          {
+            "id": "constitution",
+            "scope": "project",
+            "description": "Use when setting or amending a project's non-negotiables — stack canon, quality bars, conventions… NOT a feature spec (that is `specify`), NOT the technical plan (that is `plan`), NOT the wiki itself (that is `harness`)."
+          },
+          {
+            "id": "debug",
+            "scope": "project",
+            "description": "Use when something is broken — a failing or flaky test, crash,… NOT a feature to spec or build (that is `specify`/`implement`), NOT the lint/test gate (that is `verify`), NOT adversarial diff reading (that is `review`)."
+          },
+          {
+            "id": "decision-challenge",
+            "scope": "project",
+            "description": "Use when a high-impact plan, migration or architecture claim needs a bounded adversarial challenge before commitment. Isolat… NOT a finished-diff review (`review`/`code-review`), NOT SDD artifact consistency (`analyze`)."
+          },
+          {
+            "id": "deprecation",
+            "scope": "project",
+            "description": "Use when retiring a public API, feature, integration, service or legacy path without abandoning consumers. Inventories usage,… NOT live schema expand-contract (`db-migrations`), NOT replacement API design (`api-design`)."
+          },
+          {
+            "id": "design",
+            "scope": "project",
+            "description": "Use when designing, redesigning, restyling or reviewing a web page or app screen (landing, product site, portfolio, dashboard, docs) or when a UI looks generic… NOT the words (landing-copy), NOT flows or usability (ux)."
+          },
+          {
+            "id": "fable-operator",
+            "scope": "project",
+            "description": "Use when a substantive request needs verified, calibrated reasoning — analysis, diagnosis, review, adv… NOT casual chat (rigor theater), NOT the SDD gates `verify`, `debug`, `review`; this is the discipline beneath them."
+          },
+          {
+            "id": "ftd",
+            "scope": "project",
+            "description": "Use for ordinary authorised change — the default lane once the… NOT the full method (that is `asdd`), NOT the classification itself (that is the decisor in `suggest`), NOT a request for information, which writes nothing."
+          },
+          {
+            "id": "harness",
+            "scope": "project",
+            "description": "Use when governing a workspace's control plane, code or not — the `01-TOOLS/` tooling layer, the `02-DOCS/` chaos→knowledge wiki, the root Knowledge m… NOT the bootstrap front door (that is `init`, which hands off here)."
+          },
+          {
+            "id": "idea-refinement",
+            "scope": "project",
+            "description": "Use when a rough product, service, workflow or feature idea needs divergent options and assumption pressure-testing before it b… NOT requirements or acceptance criteria (`specify`), NOT market sizing (`market-research`)."
+          },
+          {
+            "id": "implement",
+            "scope": "project",
+            "description": "Use when an approved plan and task list exist and it is time to turn them into worki… NOT spec writing (that is `specify`), NOT planning (that is `plan`), NOT the closing whole-branch gate (stage 5: `verify` + `review`)."
+          },
+          {
+            "id": "init",
+            "scope": "project",
+            "description": "Use when starting from nothing or pointing rsc at an existing project — the front door. First asks one question — technical terms or analogies (analogies by def… NOT the scaffolder (that is `harness`), NOT a stack skill."
+          },
+          {
+            "id": "orient",
+            "scope": "project",
+            "description": "Always-on. How the harness talks to the person: STE-style short sentences, every answer understandable on its… NOT the missing-skill installer (that is `suggest`), NOT a text the user sends to others (that is `unslop`)."
+          },
+          {
+            "id": "parallel",
+            "scope": "project",
+            "description": "Use when two or more pieces of work are genuinely independent — disjoint files, no shared state, no ordering edge — an… NOT the isolation it runs in (that is `worktrees`), NOT the per-unit TDD loop (that is `implement`)."
+          },
+          {
+            "id": "plan",
+            "scope": "project",
+            "description": "Use when an approved, clarified spec must become a te… NOT the what/why spec (that is `specify`), NOT the ambiguity sweep (that is `clarify`), NOT the task breakdown (that is `tasks`), NOT the code (that is `implement`)."
+          },
+          {
+            "id": "review",
+            "scope": "project",
+            "description": "Use when a diff needs adversarial judgment in rsc ASDD — per task inside implement… NOT running lint/type/tests (that is `verify`), NOT the spec-less standalone pass (that is `code-review`), NOT merging (that is `ship`)."
+          },
+          {
+            "id": "sdd-init",
+            "scope": "project",
+            "description": "Use when calibrating an existing repo for the rsc SDD chain: detect stack, package manager, test r… NOT the dispatcher that routes SDD phases (that is `asdd`), NOT first-contact user/workspace bootstrap (that is `init`)."
+          },
+          {
+            "id": "security-audit",
+            "scope": "project",
+            "description": "Use when asking if a project, diff or feature is secure: security audit or review, vulnerabilities, injection (SQL, XSS), broken access control, auth and JWT, CORS, SSRF, upl… NOT agent guardrails (that is agent-safety)."
+          },
+          {
+            "id": "ship",
+            "scope": "project",
+            "description": "Use when a verified branch that passed its closing review has to land — the… NOT running the gates (that is `verify`), NOT reading the diff for defects (that is `review`), NOT shipping to a server (that is `deployment`)."
+          },
+          {
+            "id": "simplify-code",
+            "scope": "project",
+            "description": "Use when correct working code is unnecessarily hard to read, change or verify and needs behaviour-preserving simplification in a boun… NOT fixing a failure (`debug`), NOT read-only diff judgment (`review`/`code-review`)."
+          },
+          {
+            "id": "source-grounded-development",
+            "scope": "project",
+            "description": "Use when implementation or review depends on current version-specific framework, SDK, protocol or platform behaviour and mem… NOT a standalone cited memo (`research-ops`), NOT diagnosis of a reproduced failure (`debug`)."
+          },
+          {
+            "id": "specify",
+            "scope": "project",
+            "description": "Use when a feature, change, or product idea is still fuzzy and must… NOT the technical plan (that is `plan`), NOT the de-risking ambiguity sweep (that is `clarify`), NOT project-wide principles (that is `constitution`)."
+          },
+          {
+            "id": "suggest",
+            "scope": "project",
+            "description": "Always-on. Use whenever the current user turn would clearly benefit from an rsc skill that is not yet installed — detect the gap during normal agent use, name the skill, and (with a one-word confirm) install it via `npx…"
+          },
+          {
+            "id": "tasks",
+            "scope": "project",
+            "description": "Use when an approved plan needs slicing into an ordered task list before any code — the… NOT writing the plan (that is `plan`), NOT the consistency gate (that is `analyze`), NOT executing the tasks (that is `implement`)."
+          },
+          {
+            "id": "tidy",
+            "scope": "project",
+            "description": "Use when every repository in the workspac… NOT upgrading the rsc version (that is `npx @ericrisco/rsc upgrade`), NOT opening isolation for new work (that is `worktrees`), NOT landing one finished branch (that is `ship`)."
+          },
+          {
+            "id": "unslop",
+            "scope": "project",
+            "description": "Use when a text that leaves the session (email, post, README, message, landing copy) must sound like a person… NOT how the harness talks to the user (that is `orient`), NOT a reusable voice guide (that is `brand-voice`)."
+          },
+          {
+            "id": "ux",
+            "scope": "project",
+            "description": "Use when an app or SaaS must be easy to use: designing complete user flows, screens and every state, navigation, forms, onboarding, tables, dashboards, se… NOT the visual direction (design), NOT the words (landing-copy)."
+          },
+          {
+            "id": "verify",
+            "scope": "project",
+            "description": "Use when work is about to be called done — the ASDD evidence gate, in two modes: per task inside `implement`'s lo… NOT judging the diff by eye (that is `review`, spec-less `code-review`), NOT diagnosis (that is `debug`)."
+          },
+          {
+            "id": "worktrees",
+            "scope": "project",
+            "description": "Use when work is about to become commits and needs isolation first — check the tree state, then b… NOT what may run concurrently inside those workspaces (that is `parallel`), NOT the merge/cleanup after (that is `ship`)."
+          }
+        ]
+      }
+    },
+    {
+      "doctor": {
+        "target": "antigravity",
+        "installed": [
+          "analyze",
+          "asdd",
+          "automation-strategy",
+          "clarify",
+          "connect-tool",
+          "constitution",
+          "debug",
+          "decision-challenge",
+          "deprecation",
+          "design",
+          "fable-operator",
+          "ftd",
+          "harness",
+          "idea-refinement",
+          "implement",
+          "init",
+          "orient",
+          "parallel",
+          "plan",
+          "review",
+          "sdd-init",
+          "security-audit",
+          "ship",
+          "simplify-code",
+          "source-grounded-development",
+          "specify",
+          "suggest",
+          "tasks",
+          "tidy",
+          "unslop",
+          "ux",
+          "verify",
+          "worktrees"
+        ],
+        "missing": [],
+        "hookWired": true,
+        "manifestSkills": 273,
+        "backups": {
+          "exists": true,
+          "count": 10,
+          "latest": "20261117-212352-sync-antigravity"
+        },
+        "contextBudget": {
+          "scopes": [],
+          "notApplicable": [
+            "sessionStart",
+            "perTurn"
+          ],
+          "sessionStartBytes": 0,
+          "perTurnBytes": 0,
+          "descriptionsBytes": 15055,
+          "installedSkills": 33,
+          "topContributors": {
+            "bodies": [
+              {
+                "id": "specify",
+                "bytes": 33112
+              },
+              {
+                "id": "review",
+                "bytes": 29219
+              },
+              {
+                "id": "harness",
+                "bytes": 25647
+              },
+              {
+                "id": "implement",
+                "bytes": 25464
+              },
+              {
+                "id": "ship",
+                "bytes": 25194
+              }
+            ],
+            "descriptions": [
+              {
+                "id": "specify",
+                "bytes": 721
+              },
+              {
+                "id": "tidy",
+                "bytes": 659
+              },
+              {
+                "id": "asdd",
+                "bytes": 642
+              },
+              {
+                "id": "suggest",
+                "bytes": 606
+              },
+              {
+                "id": "review",
+                "bytes": 602
+              }
+            ]
+          },
+          "findings": [],
+          "note": "This target has no hook injection; only skill weight applies."
+        },
+        "worktreeCleanup": {
+          "state": "armed"
+        },
+        "worktreeHygiene": {
+          "ignored": true,
+          "leftovers": []
+        },
+        "ownSkills": {
+          "present": [],
+          "missing": [],
+          "declared": []
+        },
+        "sello": {
+          "enabled": false
+        },
+        "asddGate": {
+          "state": "not-installed"
+        },
+        "gitmojiGuard": "deferred",
+        "emoji": "on",
+        "optOutsNotApplied": [],
+        "versions": {
+          "cli": "4.1.7",
+          "installed": "4.1.7",
+          "behind": false
+        },
+        "automationGaps": 0,
+        "memory": {
+          "supportedMode": "unsupported",
+          "mode": "unsupported",
+          "status": "unsupported",
+          "reason": "no-local-lifecycle",
+          "missing": [],
+          "tracked": []
+        },
+        "missingAgents": [],
+        "invalidAgentTools": [],
+        "agentCollisions": [],
+        "agentsEditedByYou": [],
+        "agentModel": null,
+        "missingCommands": [],
+        "commandOrphans": [],
+        "commandCollisions": [],
+        "opencodePluginsOutdated": [],
+        "pending": [
+          {
+            "id": "constitution-draft",
+            "path": "02-DOCS/wiki/sdd/constitution.md",
+            "action": "Complete it with the `constitution` phase before the first SDD feature; ratifying removes `status: draft`."
+          }
+        ],
+        "onboarding": {
+          "status": "pending",
+          "missing": [],
+          "pending": [
+            "02-DOCS/wiki/sdd/constitution.md"
+          ],
+          "action": "Complete 02-DOCS/wiki/sdd/constitution.md with the `constitution` phase (tell your agent \"constitution\") before the first SDD feature; ratifying removes `status: draft`."
+        },
+        "healthy": true
+      },
+      "target": "antigravity",
+      "capabilities": {
+        "memory": {
+          "supportedMode": "unsupported",
+          "mode": "unsupported",
+          "status": "unsupported",
+          "reason": "no-local-lifecycle",
+          "missing": [],
+          "tracked": []
+        },
+        "agentsProject": [],
+        "skillsProject": [
+          {
+            "id": "analyze",
+            "scope": "project",
+            "description": "Use when constitution, spec, plan and tasks al… NOT the task breakdown (that is `tasks`), NOT the coding (that is `implement`), NOT the post-code test gate (that is `verify`), NOT resolving ambiguity (that is `clarify`)."
+          },
+          {
+            "id": "asdd",
+            "scope": "project",
+            "description": "Use when a feature or substantial change should go from idea to shipped, verified software… NOT a single phase (it dispatches), NOT small authorised changes (that is `ftd`), NOT the workspace harness (that is `harness`)."
+          },
+          {
+            "id": "automation-strategy",
+            "scope": "project",
+            "description": "Use when deciding whether a process is worth automating, sizing ROI and build-vs-buy, choosin… NOT building the flow (that is `automation-flows`, or `n8n` / `make` / `zapier` / `power-automate` to drive a live platform)."
+          },
+          {
+            "id": "clarify",
+            "scope": "project",
+            "description": "Use when a spec exists and must be de-risked before planning — run the gap checklist over its four ASDD questions and out-of-scope, ask only what changes wha… NOT the cross-artifact consistency check (that is `analyze`)."
+          },
+          {
+            "id": "connect-tool",
+            "scope": "project",
+            "description": "Use when the user names a specific tool to connect to the agent (an ERP, accounting or desktop progr… NOT a full typed API client (that is `api-connector-builder`), NOT a whole-workspace tooling scan (that is `harness`)."
+          },
+          {
+            "id": "constitution",
+            "scope": "project",
+            "description": "Use when setting or amending a project's non-negotiables — stack canon, quality bars, conventions… NOT a feature spec (that is `specify`), NOT the technical plan (that is `plan`), NOT the wiki itself (that is `harness`)."
+          },
+          {
+            "id": "debug",
+            "scope": "project",
+            "description": "Use when something is broken — a failing or flaky test, crash,… NOT a feature to spec or build (that is `specify`/`implement`), NOT the lint/test gate (that is `verify`), NOT adversarial diff reading (that is `review`)."
+          },
+          {
+            "id": "decision-challenge",
+            "scope": "project",
+            "description": "Use when a high-impact plan, migration or architecture claim needs a bounded adversarial challenge before commitment. Isolat… NOT a finished-diff review (`review`/`code-review`), NOT SDD artifact consistency (`analyze`)."
+          },
+          {
+            "id": "deprecation",
+            "scope": "project",
+            "description": "Use when retiring a public API, feature, integration, service or legacy path without abandoning consumers. Inventories usage,… NOT live schema expand-contract (`db-migrations`), NOT replacement API design (`api-design`)."
+          },
+          {
+            "id": "design",
+            "scope": "project",
+            "description": "Use when designing, redesigning, restyling or reviewing a web page or app screen (landing, product site, portfolio, dashboard, docs) or when a UI looks generic… NOT the words (landing-copy), NOT flows or usability (ux)."
+          },
+          {
+            "id": "fable-operator",
+            "scope": "project",
+            "description": "Use when a substantive request needs verified, calibrated reasoning — analysis, diagnosis, review, adv… NOT casual chat (rigor theater), NOT the SDD gates `verify`, `debug`, `review`; this is the discipline beneath them."
+          },
+          {
+            "id": "ftd",
+            "scope": "project",
+            "description": "Use for ordinary authorised change — the default lane once the… NOT the full method (that is `asdd`), NOT the classification itself (that is the decisor in `suggest`), NOT a request for information, which writes nothing."
+          },
+          {
+            "id": "harness",
+            "scope": "project",
+            "description": "Use when governing a workspace's control plane, code or not — the `01-TOOLS/` tooling layer, the `02-DOCS/` chaos→knowledge wiki, the root Knowledge m… NOT the bootstrap front door (that is `init`, which hands off here)."
+          },
+          {
+            "id": "idea-refinement",
+            "scope": "project",
+            "description": "Use when a rough product, service, workflow or feature idea needs divergent options and assumption pressure-testing before it b… NOT requirements or acceptance criteria (`specify`), NOT market sizing (`market-research`)."
+          },
+          {
+            "id": "implement",
+            "scope": "project",
+            "description": "Use when an approved plan and task list exist and it is time to turn them into worki… NOT spec writing (that is `specify`), NOT planning (that is `plan`), NOT the closing whole-branch gate (stage 5: `verify` + `review`)."
+          },
+          {
+            "id": "init",
+            "scope": "project",
+            "description": "Use when starting from nothing or pointing rsc at an existing project — the front door. First asks one question — technical terms or analogies (analogies by def… NOT the scaffolder (that is `harness`), NOT a stack skill."
+          },
+          {
+            "id": "orient",
+            "scope": "project",
+            "description": "Always-on. How the harness talks to the person: STE-style short sentences, every answer understandable on its… NOT the missing-skill installer (that is `suggest`), NOT a text the user sends to others (that is `unslop`)."
+          },
+          {
+            "id": "parallel",
+            "scope": "project",
+            "description": "Use when two or more pieces of work are genuinely independent — disjoint files, no shared state, no ordering edge — an… NOT the isolation it runs in (that is `worktrees`), NOT the per-unit TDD loop (that is `implement`)."
+          },
+          {
+            "id": "plan",
+            "scope": "project",
+            "description": "Use when an approved, clarified spec must become a te… NOT the what/why spec (that is `specify`), NOT the ambiguity sweep (that is `clarify`), NOT the task breakdown (that is `tasks`), NOT the code (that is `implement`)."
+          },
+          {
+            "id": "review",
+            "scope": "project",
+            "description": "Use when a diff needs adversarial judgment in rsc ASDD — per task inside implement… NOT running lint/type/tests (that is `verify`), NOT the spec-less standalone pass (that is `code-review`), NOT merging (that is `ship`)."
+          },
+          {
+            "id": "sdd-init",
+            "scope": "project",
+            "description": "Use when calibrating an existing repo for the rsc SDD chain: detect stack, package manager, test r… NOT the dispatcher that routes SDD phases (that is `asdd`), NOT first-contact user/workspace bootstrap (that is `init`)."
+          },
+          {
+            "id": "security-audit",
+            "scope": "project",
+            "description": "Use when asking if a project, diff or feature is secure: security audit or review, vulnerabilities, injection (SQL, XSS), broken access control, auth and JWT, CORS, SSRF, upl… NOT agent guardrails (that is agent-safety)."
+          },
+          {
+            "id": "ship",
+            "scope": "project",
+            "description": "Use when a verified branch that passed its closing review has to land — the… NOT running the gates (that is `verify`), NOT reading the diff for defects (that is `review`), NOT shipping to a server (that is `deployment`)."
+          },
+          {
+            "id": "simplify-code",
+            "scope": "project",
+            "description": "Use when correct working code is unnecessarily hard to read, change or verify and needs behaviour-preserving simplification in a boun… NOT fixing a failure (`debug`), NOT read-only diff judgment (`review`/`code-review`)."
+          },
+          {
+            "id": "source-grounded-development",
+            "scope": "project",
+            "description": "Use when implementation or review depends on current version-specific framework, SDK, protocol or platform behaviour and mem… NOT a standalone cited memo (`research-ops`), NOT diagnosis of a reproduced failure (`debug`)."
+          },
+          {
+            "id": "specify",
+            "scope": "project",
+            "description": "Use when a feature, change, or product idea is still fuzzy and must… NOT the technical plan (that is `plan`), NOT the de-risking ambiguity sweep (that is `clarify`), NOT project-wide principles (that is `constitution`)."
+          },
+          {
+            "id": "suggest",
+            "scope": "project",
+            "description": "Always-on. Use whenever the current user turn would clearly benefit from an rsc skill that is not yet installed — detect the gap during normal agent use, name the skill, and (with a one-word confirm) install it via `npx…"
+          },
+          {
+            "id": "tasks",
+            "scope": "project",
+            "description": "Use when an approved plan needs slicing into an ordered task list before any code — the… NOT writing the plan (that is `plan`), NOT the consistency gate (that is `analyze`), NOT executing the tasks (that is `implement`)."
+          },
+          {
+            "id": "tidy",
+            "scope": "project",
+            "description": "Use when every repository in the workspac… NOT upgrading the rsc version (that is `npx @ericrisco/rsc upgrade`), NOT opening isolation for new work (that is `worktrees`), NOT landing one finished branch (that is `ship`)."
+          },
+          {
+            "id": "unslop",
+            "scope": "project",
+            "description": "Use when a text that leaves the session (email, post, README, message, landing copy) must sound like a person… NOT how the harness talks to the user (that is `orient`), NOT a reusable voice guide (that is `brand-voice`)."
+          },
+          {
+            "id": "ux",
+            "scope": "project",
+            "description": "Use when an app or SaaS must be easy to use: designing complete user flows, screens and every state, navigation, forms, onboarding, tables, dashboards, se… NOT the visual direction (design), NOT the words (landing-copy)."
+          },
+          {
+            "id": "verify",
+            "scope": "project",
+            "description": "Use when work is about to be called done — the ASDD evidence gate, in two modes: per task inside `implement`'s lo… NOT judging the diff by eye (that is `review`, spec-less `code-review`), NOT diagnosis (that is `debug`)."
+          },
+          {
+            "id": "worktrees",
+            "scope": "project",
+            "description": "Use when work is about to become commits and needs isolation first — check the tree state, then b… NOT what may run concurrently inside those workspaces (that is `parallel`), NOT the merge/cleanup after (that is `ship`)."
+          }
+        ]
+      }
+    }
+  ],
+  "timestampUtc": "2026-11-17T21:26:49.0717884Z",
+  "workspaceBranch": "chore/rsc-development-environment",
+  "backupTests": {
+    "scope": "fork tests in isolated temporary directories",
+    "failed": 0,
+    "command": "node --test tests/backups.test.js",
+    "passed": 11
+  }
+}

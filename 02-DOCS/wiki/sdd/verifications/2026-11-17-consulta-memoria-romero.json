@@ -1,0 +1,62 @@
+{
+  "tipo": "verificacion-documental",
+  "fechaUTC": "2026-11-17T21:56:43Z",
+  "especificacion": "02-DOCS/wiki/sdd/specs/consulta-memoria-romero.md",
+  "sha256": "3a878ad5dcfd2ebf8a9fc8a981a40bbb5f33579dd8442285812e2d362ea44845",
+  "estadoDocumento": "borrador pendiente de aprobación del propietario",
+  "rsc": {
+    "referencia": "github:CodeMonkReaper/rsc-harness-vibe#2b37e98870eaaca9980bf903381d5ae5aacd5280",
+    "comando": "node ../rsc-harness-vibe/scripts/rsc.js spec gate 02-DOCS/wiki/sdd/specs/consulta-memoria-romero.md",
+    "codigoSalida": 0,
+    "salida": [
+      "PASS  consulta-memoria-romero.md — 2 open point(s), 2 typed",
+      "",
+      "1/1 pass, 0 status claim(s) contradicted by the repo (no repository to ask). Not checked by this gate:",
+      "  - que ninguna sección contenga una suposición sin marcar (no es detectable por máquina; es el juicio que la fase existe para ejercer)",
+      "  - que el contenido de cada sección sea correcto, y no sólo presente",
+      "  - que los criterios de aceptación sean de verdad binarios",
+      "  - si una spec dice \"implementada\" sin nombrar commit, PR ni versión (no hay nada que ir a mirar)",
+      "  - si el trabajo de una spec que se declara sin aterrizar llegó por otra vía (git no lo distingue)",
+      "  - las specs anteriores a 2026-09-06 — quedan exentas de \"qué pasa si no lo construimos\" y de \"la alternativa más barata\", que no pueden rellenarse a posteriori",
+      "  - las specs anteriores a 2026-11-03 — quedan exentas de las cuatro preguntas de ASDD (qué podrá hacer el usuario, qué resultado obtiene, qué debe respetar, cómo lo demuestra)"
+    ]
+  },
+  "contratoConsultado": {
+    "repositorio": "https://github.com/CodeMonkReaper/romero",
+    "revision": "3f46f9a322b3b44b946889d8474ac835b98bf9fb",
+    "fuentes": [
+      "pkg/romeroclient/client.go",
+      "pkg/romeroclient/types.go"
+    ],
+    "comprobacion": "Inspección del cliente publicado y de los tipos de búsqueda y detalle."
+  },
+  "revisionIndependiente": {
+    "alcance": "Criterios, supuestos y permisos del borrador frente a la constitución.",
+    "hallazgosResueltos": [
+      "Caso 7. Proyecto ausente o ambiguo.",
+      "Caso 8. Interrupción al confirmar parte de los resultados."
+    ],
+    "resultado": "El revisor confirmó la resolución de ambos hallazgos."
+  },
+  "integracionConInstancia": "Pendiente. Esta verificación no ejecutó pruebas de producto ni consultó memorias reales.",
+  "aclaracion": {
+    "fechaUTC": "2026-11-17T22:00:55Z",
+    "sha256": "d66f40b78df5bb36dd4cccfb3fd0a09569bcf3ade5dbad674a5bb6b5f687173a",
+    "estadoDocumento": "clarified, pendiente de aprobación final",
+    "casosDeAceptacion": 9,
+    "decision": "Ambas, indicando cuál fue sustituida",
+    "comando": "node ../rsc-harness-vibe/scripts/rsc.js spec gate 02-DOCS/wiki/sdd/specs/consulta-memoria-romero.md",
+    "codigoSalida": 0,
+    "salida": "PASS  consulta-memoria-romero.md — 1 open point(s), 1 typed",
+    "alcance": "Verificación documental. La integración con ROMERO sigue pendiente."
+  },
+  "aprobacionFinal": {
+    "fechaUTC": "2026-11-17T22:12:00Z",
+    "sha256": "421d86fdb454d9b051dc3f2859f9e9381aa7c8121c997da3ebe05d6276b21d59",
+    "estadoDocumento": "approved",
+    "casosDeAceptacion": 9,
+    "comando": "node ../rsc-harness-vibe/scripts/rsc.js spec gate 02-DOCS/wiki/sdd/specs/consulta-memoria-romero.md",
+    "codigoSalida": 0,
+    "salida": "PASS  consulta-memoria-romero.md — 1 open point(s), 1 typed"
+  }
+}
