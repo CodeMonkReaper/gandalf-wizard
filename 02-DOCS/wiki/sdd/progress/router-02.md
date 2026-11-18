@@ -73,3 +73,15 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
 - controls: tests ✅ (`go test ./...` 7 paquetes ok) · build ✅ (`go vet ./...`) · security ✅ (puerto sin cuota; descubrimiento solo autorizado+documentado; `Execute` nunca invocado por `Build`) · traceability ✅ (AC1, AC2, AC5, AC15, AC19)
 - decisión de diseño: `Availability` deriva del sondeo local (instalado + autenticación lista + solo texto demostrado); `Verification` separa la evidencia del modelo (descubrimiento confirmado); `Origin` distingue declarado/descubierto; el inventario de candidatos sin perfil declarado vive en `Catalog.Inventory` ordenado por ID y queda fuera de `Profiles` para que T003 lo excluya
 - errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un import sin uso (`errors`) detectado por el compilador y retirado antes del commit
+
+## T003 — 2026-11-18
+- status: complete · issue [#19](https://github.com/CodeMonkReaper/gandalf-wizard/issues/19) cerrada con close review
+- red: `go test ./internal/router -run '^TestSelection$' -count=1` falló con decisión vacía (`Select` era stub)
+- green: misma suite ok, 12 subtests
+- files: `internal/router/select.go`, `internal/router/select_test.go`
+- commit: `5c73405` (base `85580d3`)
+- risk: tier 1 (`rsc risk` sobre el diff real) — 1 revisor
+- review: 0 hallazgos (ronda 1)
+- controls: tests ✅ (`go test ./...` 7 paquetes ok) · build ✅ (`go vet ./...`) · security ✅ (función pura sin entorno/reloj/azar) · traceability ✅ (AC3–AC5, AC9, AC10, AC12, AC19)
+- diseño: `Assessment.Reason` vacío para elegibles (la explicación de elegibles vive en `Choice.Explanation`); el inventario se registra en `Considered` como descartado «sin posición declarada»; el modo manual no suma perfiles ni recorre inventario
+- errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un helper `itoa` artesanal se sustituyó por `strconv.Itoa` antes del commit
