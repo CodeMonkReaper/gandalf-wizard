@@ -65,3 +65,13 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/5
 - review: ronda 1/3, 1 nit → L4 intentional (archivo parcial si Write falla; el error cita la ruta); VERDICT: pass
 - controls: tests ✅ (`go test ./...` 3 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (O_EXCL sin sobrescritura; 0600 en POSIX; aserción de permisos consciente de plataforma por Q4) · traceability ✅ (AC4)
 - decision: aserción de permisos 0600 solo en POSIX (Windows ignora bits POSIX en OpenFile); la exclusividad O_EXCL sí se verifica en Windows
+
+## T004 — 2026-11-18
+- status: complete (commit `7e44505`, sub-Issue #8)
+- red: `go test -v ./internal/render -run TestRender` falló en 10 aserciones con stubs compilando
+- green: mismo comando en PASS; `go test -count=1 -cover ./internal/render` 93.9%
+- files: `internal/render/render.go`, `internal/render/render_test.go`
+- risk: tier 1 (`rsc risk --base 5a41747 --json`: `classes: ["default","docs"]`, `reviewers: 1`)
+- review: ronda 1/3, 1 should-fix → L5 fixed (degradation_notice del JSON ahora usa el aviso resuelto del presentador; triangulación con Degraded=true y aviso vacío); VERDICT: pass
+- controls: tests ✅ (`go test ./...` 4 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (render no accede a entorno ni secretos; denegación sin resúmenes ni IDs verificado) · traceability ✅ (AC1, AC2, AC3, AC6, AC7, AC9, AC10, AC11)
+- decision: salidas humanas y JSON comparten el aviso de degradación resuelto por el presentador para que agente y persona lean lo mismo; referencias 1-4 de la spec verificadas byte a byte
