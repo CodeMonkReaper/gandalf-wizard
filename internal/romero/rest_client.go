@@ -84,7 +84,7 @@ func (a *RomeroPublicClientAdapter) Search(ctx context.Context, scope ResolvedSc
 	body := searchRequest{
 		Query:             query,
 		ProjectIDs:        []string{scope.ProjectID},
-		Scopes:            []string{"project"},
+		Scopes:            []string{"project_shared"},
 		IncludeSuperseded: true,
 	}
 	resp, err := a.do(ctx, http.MethodPost, "/api/v1/memories/search", body)

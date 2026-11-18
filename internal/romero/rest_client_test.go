@@ -42,7 +42,7 @@ func TestRomeroPublicClientAdapter_Contract(t *testing.T) {
 			t.Errorf("include_superseded: got %v", gotBody["include_superseded"])
 		}
 		scopes, _ := gotBody["scopes"].([]any)
-		if len(scopes) != 1 || scopes[0] != "project" {
+		if len(scopes) != 1 || scopes[0] != "project_shared" {
 			t.Errorf("scopes: got %v", gotBody["scopes"])
 		}
 		pids, _ := gotBody["project_ids"].([]any)
