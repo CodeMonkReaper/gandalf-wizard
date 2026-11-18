@@ -156,6 +156,7 @@ func TestOrchestrator_ScopeAndPermissions(t *testing.T) {
 		// comes back from another project and must be filtered at detail level.
 		adapter := &RomeroFakeAdapter{
 			OmitProjectIDInSearch:       true,
+			AllowCrossProjectSearchLeak: true,
 			AllowCrossProjectDetailLeak: true,
 			Records: []FakeMemoryRecord{
 				{MemoryID: "M1", ProjectID: "Faro", Summary: "ok", SourceRef: "F1", MatchQueries: []string{"x"}},
