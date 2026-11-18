@@ -3,7 +3,7 @@ type: progress
 title: Progreso — Consulta de memoria de proyecto en ROMERO
 description: Registro incremental de tareas TDD, revisiones y controles por tarea para Foundation 0.1.
 tags: [sdd, progress, foundation, romero]
-timestamp: 2026-11-18T00:03:05Z
+timestamp: 2026-11-18T01:35:00Z
 topic: sdd
 slug: consulta-memoria-romero
 branch: feat/consulta-memoria-romero
@@ -13,7 +13,7 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/2
 
 # Progreso — Consulta de memoria de proyecto en ROMERO
 
-> Issue vinculado: [#2](https://github.com/CodeMonkReaper/gandalf-wizard/issues/2) · Repositorio: [CodeMonkReaper/gandalf-wizard](https://github.com/CodeMonkReaper/gandalf-wizard)
+> Issue vinculado: [#2](https://github.com/CodeMonkReaper/gandalf-wizard/issues/2) (cerrado tras merge en `30bd22c`) · Repositorio: [CodeMonkReaper/gandalf-wizard](https://github.com/CodeMonkReaper/gandalf-wizard)
 
 ## Decision queue
 
@@ -87,3 +87,52 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/2
   - traceability: ✅ (`AC1, AC2, AC3, AC4 [opacidad], AC5, AC6, AC8, AC9`)
 - skill_resolution: `used: [implement, go, verify, review]` · `missing: []` · `fallback: []`
 - decision: ninguna desviación del plan; se cerró el `default` en `Present` a `LabelIncomplete` (`fail-closed`) tras hallazgo `L4` y se endurecieron las aserciones en `presenter_test.go` tras `L3`/`L5`; siguiente tarea `T005`
+
+## T005 — 2026-11-18
+- status: complete
+- commits: `2a8c2b6` (ronda 1), `f3e4ba0` (ronda 2), `c260fa9` (ronda 3) en `feat/consulta-memoria-romero`, worktree `.worktrees/consulta-memoria-romero`, base `1f02ee3`
+- implementation: `MemoryQueryOrchestrator` en `internal/romero/orchestrator.go` — orquestación two-step (`Search` → `GetDetail`), 0 llamadas al puerto en fallo de scope (`StatusScopeRequired`), filtro cross-project en hit (`hit.ProjectID != "" && != scope`) y detail (`detail.ProjectID != scope`), `ErrAccessDenied` oculta todo (sin entries, IDs ni audit trail), audit trail read-only (solo `search`/`getDetail`)
+- red: `go test -v ./internal/romero -run "TestOrchestrator_"` falló (stub devolvía `MemoryQueryOutcome{}` vacío)
+- green: todos los tests pasan tras implementar `orchestrator.go`
+- triangulation: 5 funciones de test / 8 subtests en `PASS`; cobertura `93.2%`
+- files: `internal/romero/orchestrator.go`, `internal/romero/orchestrator_test.go`
+- risk: tier 1 (`rsc risk --base 1f02ee3 --json` desde el worktree: `{"tier":1,"reviewers":1,"classes":["default"]}`)
+- review: ronda 1 → 2 should-fix + 2 nit → `changes-needed`; ronda 2 (`f3e4ba0`) → finding 2 fixed, finding 1 still vacuous → `changes-needed`; ronda 3 (`c260fa9`, mutation-proven) → `VERDICT: pass`
+- hallazgos corregidos: (1) subtest detail-level cross-project necesitaba `AllowCrossProjectSearchLeak: true` para ejercitar el filtro real; (2) el path de `ErrAccessDenied` en detail devolvía `AuditTrail` filtrando el conteo de hits — eliminado
+- controls:
+  - tests: ✅ (`go test -count=1 -cover ./...` `PASS` al `93.2%`)
+  - build: ✅ (`gofmt -l .` vacío; `go vet ./...` `PASS`)
+  - security: ✅ (solo stdlib `context`/`errors`; 0 port calls en scope failure; sin leak de datos/IDs en denial o cross-project; audit trail read-only)
+  - traceability: ✅ (`AC1, AC2, AC3, AC4, AC6, AC7`)
+- skill_resolution: `used: [grilling, implement, go, verify, review]` · `missing: []`
+- decision: ninguna desviación del plan; siguiente tarea `T006`
+
+## T006 — 2026-11-18
+- status: complete
+- commit: `e588a4e` (`feat(romero): handle empty/degraded/incomplete/partial/superseded in orchestrator (T006) (#2)`)
+- implementation: manejo de `StatusEmpty`, `StatusIncomplete`, `StatusPartial`, aviso de búsqueda degradada y `VigenciaSuperseded` desde metadatos explícitos en `internal/romero/orchestrator.go` y `internal/romero/orchestrator_t006_test.go`
+- review: tier 1 `VERDICT: pass` en ronda 1
+- controls: tests ✅ (`go test -cover ./...` al `94.8%`), build ✅, security ✅, traceability ✅ (`AC3, AC5, AC8, AC9`)
+- siguiente: `T007`
+
+## T007 — 2026-11-18
+- status: complete
+- commits: `3dedb28` (implementación inicial), `3da9721` (fix de seam `ErrDetailInterrupted` y escape de `memoryID` en path)
+- implementation: adaptador REST `RomeroPublicClientAdapter` en `internal/romero/rest_client.go` sobre `net/http`, límite de lectura de 4 MiB, mapeo de zero-UUID y 9/9 pruebas de contrato en `internal/romero/rest_client_test.go`
+- review: tier 1 `VERDICT: pass` tras corregir la envoltura de errores de transporte en `GetDetail` como `ErrDetailInterrupted`
+- controls: tests ✅ (9/9 contract tests en `PASS`), build ✅, security ✅, traceability ✅ (`AC1, AC2, AC4, AC5, AC8, AC9`)
+- siguiente: `T008`
+
+## T008 — 2026-11-18
+- status: complete
+- commit: `f5e0170` (`feat(romero): end-to-end acceptance suite AC1-AC9 (T008) (#2)`)
+- implementation: suite de aceptación extremo a extremo `AC1`–`AC9` en `internal/romero/acceptance_test.go`
+- controls: tests ✅ (`AC1`–`AC9` en `PASS`), build ✅, security ✅, traceability ✅ (`AC1`–`AC9`)
+- siguiente: `T009`
+
+## T009 — 2026-11-18
+- status: complete
+- commits: `075f269` (gate de cierre), `42c2453` (registro `T006`–`T009`), `6353d60` (test de integración viva y ajuste de scope `project_shared`), `e385ce2` (evidencia de integración viva), `30bd22c` (merge de PR #3 en `master`)
+- gate: `gofmt` limpio en worktree, `go vet ./...` `PASS`, `go test ./...` 16/16 `PASS` (incluyendo `internal/romero/integration_test.go`), cobertura `90.8%`
+- live_integration: verificada contra instancia real de ROMERO (`rev 3f46f9a`, perfil lite en `127.0.0.1:8420` con `romero-postgres`); evidencia en [2026-11-18-romero-live-integration.json](../verifications/2026-11-18-romero-live-integration.json)
+- estado final: Foundation 0.1 completada e integrada en `master`; Issue #2 cerrado.
