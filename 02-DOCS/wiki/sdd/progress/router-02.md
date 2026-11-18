@@ -85,3 +85,16 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
 - controls: tests ✅ (`go test ./...` 7 paquetes ok) · build ✅ (`go vet ./...`) · security ✅ (función pura sin entorno/reloj/azar) · traceability ✅ (AC3–AC5, AC9, AC10, AC12, AC19)
 - diseño: `Assessment.Reason` vacío para elegibles (la explicación de elegibles vive en `Choice.Explanation`); el inventario se registra en `Considered` como descartado «sin posición declarada»; el modo manual no suma perfiles ni recorre inventario
 - errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un helper `itoa` artesanal se sustituyó por `strconv.Itoa` antes del commit
+
+## T004 — 2026-11-18
+- status: complete · issue [#23](https://github.com/CodeMonkReaper/gandalf-wizard/issues/23) cerrada con close review
+- red: `go test ./internal/router -run '^TestRun$' -count=1` falló por aserción en los 14 casos (`Run` era stub que devolvía `Result{}`); sin pánico tras añadir guardas de longitud
+- green: misma suite ok, 14 subtests
+- files: `internal/router/run.go`, `internal/router/run_test.go`
+- commit: `89bd302` (base `5a34ef4`)
+- risk: tier 1 (`rsc risk` sobre el diff real) — 1 revisor
+- review: 1 reportado → 1 único → 0 blocker/should-fix; 1 nit (L12, la explicación en éxito no pasaba por redacción) corregido en el mismo commit (amend)
+- controls: tests ✅ (`go test ./...` 7 paquetes ok) · build ✅ (`go vet ./...`) · security ✅ (errores crudos colapsan a motivo genérico; centinela verificado ausente en salida, motivos y explicación; sin goroutines en `Run`) · traceability ✅ (AC5–AC13, AC18)
+- decisión de diseño: `Run` toma `getenv func(string) string` como sexto parámetro (registrada en [decisions.md](../decisions.md)); el esfuerzo nativo se resuelve como `profile.Efforts[choice.Effort]` (el orquestador traduce key→nativo); la cancelación del padre gana sobre el plazo del hijo y sobre el éxito; el dedup por ID de perfil y el tope manual de 1 intento aplican antes de ejecutar
+- reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
+- errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un error de compilación del test (`a1` fuera de ámbito en `check`) y un colgado del RED (`<-started` sin plazo con el stub) se corrigieron antes del verde
