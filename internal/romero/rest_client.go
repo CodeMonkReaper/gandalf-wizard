@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -129,9 +130,9 @@ func (a *RomeroPublicClientAdapter) Search(ctx context.Context, scope ResolvedSc
 
 // GetDetail implements RomeroReadPort via GET /api/v1/memories/{id}.
 func (a *RomeroPublicClientAdapter) GetDetail(ctx context.Context, scope ResolvedScope, memoryID string) (MemoryDetail, error) {
-	resp, err := a.do(ctx, http.MethodGet, "/api/v1/memories/"+memoryID, nil)
+	resp, err := a.do(ctx, http.MethodGet, "/api/v1/memories/"+url.PathEscape(memoryID), nil)
 	if err != nil {
-		return MemoryDetail{}, err
+		return MemoryDetail{}, fmt.Errorf("%w: %v", ErrDetailInterrupted, err)
 	}
 	defer resp.Body.Close()
 
@@ -201,9 +202,6 @@ func (a *RomeroPublicClientAdapter) do(ctx context.Context, method, path string,
 
 	resp, err := a.httpClient.Do(req)
 	if err != nil {
-		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			return nil, fmt.Errorf("%w: %v", ErrServiceInterrupted, err)
-		}
 		return nil, fmt.Errorf("%w: %v", ErrServiceInterrupted, err)
 	}
 	return resp, nil
