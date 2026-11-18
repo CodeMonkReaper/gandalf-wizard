@@ -45,3 +45,13 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/5
 | `T008` | [#12](https://github.com/CodeMonkReaper/gandalf-wizard/issues/12) | `internal/cli/run.go` + `cmd/gandalf/main.go` | `T002` (#6), `T003` (#7), `T004` (#8), `T007` (#11) | 1 |
 | `T009` | [#13](https://github.com/CodeMonkReaper/gandalf-wizard/issues/13) | `internal/cli/acceptance_test.go` (`AC1`–`AC13`) | `T008` (#12) | 1 |
 | `T010` | `#5` | Gate final Go (`gofmt -l .`, `go vet ./...`, `go test ./...`) + cierre | `T001`–`T009` | — |
+
+## T002 — 2026-11-18
+- status: complete (commit `6c022fd`, sub-Issue #6)
+- red: `go test -v ./internal/config -run TestLoadConfig` falló en aserciones con stub de `Load` (compilaba, no importaba mal)
+- green: mismo comando en PASS; `go test -count=1 -cover ./internal/config` 88.8%
+- files: `internal/config/load.go`, `internal/config/load_test.go`
+- risk: tier 1 (`rsc risk --base a1e7132 --json`: `classes: ["default","docs"]`, `reviewers: 1`, `humanApproval: false`)
+- review: ronda 1/3, 3 nits → L1 fixed (bloque duplicado en test), L2/L3 intentional; VERDICT: pass
+- controls: tests ✅ (`go test ./...` completo en PASS) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (solo stdlib; errores con motivo fijo sin texto de parseo; `EffectiveConfig` sin valor de `ROMERO_API_KEY`) · traceability ✅ (AC2, AC3, AC5)
+- decision: motivos de error sanitizados con cadenas fijas (p. ej. «JSON inválido») sin eco del error de parseo, para que ningún carácter del archivo llegue a stdout/stderr (constitución P5); registrado en decisions.md
