@@ -54,6 +54,10 @@ func Load(input LoadInput) (EffectiveConfig, error) {
 	if err != nil {
 		return EffectiveConfig{}, err
 	}
+	globalLoaded := ""
+	if fileExists(globalPath) {
+		globalLoaded = globalPath
+	}
 
 	warnings := append([]string{}, projectFile.Warnings...)
 	warnings = append(warnings, globalFile.Warnings...)
@@ -93,7 +97,7 @@ func Load(input LoadInput) (EffectiveConfig, error) {
 		APIKeyPresent:     getenv(EnvKeyRomeroAPIKey) != "",
 		APIKeyOrigin:      OriginEnv,
 		ProjectConfigPath: projectPath,
-		GlobalConfigPath:  globalPath,
+		GlobalConfigPath:  globalLoaded,
 		Warnings:          warnings,
 	}
 	return cfg, nil
@@ -119,6 +123,15 @@ func discoverProjectConfig(workDir string) string {
 		dir = parent
 	}
 	return ""
+}
+
+// fileExists reports whether path names an existing regular file.
+func fileExists(path string) bool {
+	if path == "" {
+		return false
+	}
+	st, err := os.Stat(path)
+	return err == nil && !st.IsDir()
 }
 
 // globalConfigPath returns the user-level configuration file path.
