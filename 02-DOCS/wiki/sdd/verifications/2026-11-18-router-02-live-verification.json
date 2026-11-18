@@ -1,57 +1,79 @@
 {
-  "timestampUtc": "2026-11-18T14:55:00Z",
+  "timestampUtc": "2026-11-18T15:35:00Z",
   "kind": "live-verification",
   "feature": "router-02 (Issue #26, T010)",
-  "authorization": "El propietario autorizó explícitamente las llamadas que consumen cuota: sondas de herramientas y prompts triviales en Antigravity y Vibe, más una API directa (MISTRAL_API_KEY). La API directa quedó después aplazada por el propietario.",
+  "authorization": "El propietario autorizó explícitamente las llamadas que consumen cuota: Opción A (habilitar Antigravity y Mistral Vibe tras sonda de bloqueo) y prueba viva de API directa con credencial proporcionada solo en memoria para esta verificación.",
   "environment": {
     "go": "go1.27.3 windows/amd64",
-    "antigravity": "agy 1.5.11 (T005 documentó 1.5.10; el binario local actualizó)",
+    "antigravity": "agy 1.5.11",
     "vibe": "vibe 3.1.2",
     "sessions": {
       "antigravity": "presente (~/.gemini/google_accounts.json)",
       "vibe": "presente (~/.vibe/whoami_cache.json)"
     },
-    "isolation": "Directorios temporales de proyecto y de configuración global (APPDATA redirigido a un directorio temporal); la configuración real del usuario no se tocó. Sin credenciales en archivos: la clave de API solo existiría en el entorno del proceso."
+    "isolation": "Directorios temporales aislados para configuración global y proyecto; la configuración real del usuario no se tocó. La credencial de Mistral se inyectó exclusivamente en memoria mediante variable de entorno efímera y nunca se escribió en ningún archivo ni salida."
   },
   "localControls": {
-    "gofmt": "gofmt -l . señala 6 archivos de Foundation; verificado por bytes que la única diferencia es CRLF frente a LF (el contenido efectivo está limpio: gofmt del contenido normalizado es idéntico)",
+    "gofmt": "gofmt -l . señala únicamente los 6 archivos CRLF preexistentes de Foundation; todos los archivos de router-02 están limpios",
     "goVet": "go vet ./... salida vacía",
-    "goTest": "go test ./... 11 paquetes ok (incluye TestRouterAcceptance con 19 subtests AC1-AC19 y la suite de aceptación de Foundation)"
+    "goTest": "go test -count=1 ./... 11 paquetes ok (sin caché; incluye TestRouterAcceptance AC1-AC19 y la suite de Foundation)"
   },
   "toolSentinels": {
     "antigravity": {
       "state": "enforced",
-      "evidence": "Corrida real del centinela (crear un archivo con texto, responder solo: listo): respuesta de texto completada y cero efectos de herramientas (el directorio aislado quedó vacío). Motivo registrado: sin efectos centinela con --settings de denegación, --disable-slash-commands y --sandbox.",
+      "evidence": "Corrida real del centinela (crear un archivo con texto, responder solo: listo): respuesta de texto completada y cero efectos de herramientas (el directorio aislado quedó vacío). Motivo: sin efectos centinela con --settings de denegación, --disable-slash-commands y --sandbox.",
       "quota": "1 llamada real"
     },
     "vibe": {
-      "state": "unproven",
-      "evidence": "Con zai-glm-5-3-flash (único modelo que completa corridas en --agent ask; mistral-large-4 y mistral-small-2603 terminan con exit 1) el modelo dedica su único turno a intentar el efecto: la sesión registra entradas reasoning y effect, sin mensaje asistente, exit 3. El archivo centinela NO se creó (el bloqueo actuó), pero la definición de la sonda exige un turno de texto completado. El adaptador se conserva deshabilitado, como ordena el issue.",
-      "quota": "4 llamadas reales (3 intentos de sonda con modelos distintos + 1 corrida de diagnóstico de receta)"
+      "state": "enforced",
+      "evidence": "Sonda en dos pasos de VerifyTextOnly (38.653s): Paso 1 acotado a 20s bloqueó el intento de herramienta centinela sin crear archivos en el directorio aislado; Paso 2 confirmó respuesta de solo texto con --agent ask, --enabled-tools sin coincidencias y --max-turns 1.",
+      "quota": "2 llamadas reales (1 intento bloqueado + 1 confirmación de solo texto)"
     }
+  },
+  "liveProductionCommands": {
+    "modelsList": "cli.Run (RouterRegistry nil) exit 0 con 20 perfiles (descubrimiento agy models activo: origin=descubierto) y binario compilado ./cmd/gandalf exit 0 con 19 perfiles; los motivos de indisponibilidad ya no quedan enmascarados por la versión.",
+    "route": "cli.Run (RouterRegistry nil) exit 0, status ok, perfil antigravity/gemini-4-argon-medium (effort medium) y fallback vibe/zai-glm-5-3-flash.",
+    "doctor": "cli.Run (RouterRegistry nil) exit 7 en entorno aislado sin ROMERO_API_KEY; sección executors reporta antigravity (agy 1.5.11, text_only=enforced), vibe (vibe 3.1.2, text_only=enforced) y api-mistral (text_only=enforced)."
   },
   "liveRuns": [
     {
       "executor": "antigravity",
       "command": "run --json --profile antigravity/gemini-4-argon-medium \"Responde solo con la palabra: verificado\"",
-      "harness": "cli.Run en proceso con el registro inyectado y el estado text-only demostrado inyectado por el punto de inyección del adaptador (TextOnly); ejecutor real, proceso real, cuota real",
+      "harness": "cli.Run con cableado de producción real (RouterRegistry nil, text_only enforced por defecto)",
       "exitCode": 0,
       "status": "ok",
       "profile": "antigravity/gemini-4-argon-medium",
       "attempts": 1,
       "attemptOutcomes": ["ok"],
+      "elapsed": "37.487s",
       "output": "no vacío y coincide con la palabra solicitada (respuesta íntegra retirada)",
       "quota": "1 llamada real"
     },
     {
       "executor": "vibe",
-      "status": "no ejecutado",
-      "reason": "adaptador deshabilitado: la sonda de bloqueo no se demostró (ver toolSentinels.vibe)"
+      "command": "run --json --profile vibe/zai-glm-5-3-flash \"Responde solo con la palabra: verificado\"",
+      "harness": "cli.Run con cableado de producción real (RouterRegistry nil, text_only enforced por defecto) y comprobación adicional con binario compilado ./cmd/gandalf (exit 0, 1 intento)",
+      "exitCode": 0,
+      "status": "ok",
+      "profile": "vibe/zai-glm-5-3-flash",
+      "attempts": 1,
+      "attemptOutcomes": ["ok"],
+      "elapsed": "11.306s",
+      "output": "no vacío y coincide con la palabra solicitada (respuesta íntegra retirada)",
+      "quota": "2 llamadas reales (cli.Run + binario compilado)"
     },
     {
       "executor": "api-mistral",
-      "status": "no ejecutado",
-      "reason": "MISTRAL_API_KEY no es alcanzable desde los subprocesos del agente (ni entorno del proceso, ni registro de Windows, ni scripts de shell); el propietario decidió dejarlo para después"
+      "command": "run --json --profile api-mistral/mistral-small-latest \"Responde solo con la palabra: verificado\"",
+      "harness": "cli.Run con cableado de producción real (RouterRegistry nil, MISTRAL_API_KEY inyectada solo en memoria, verificada ausencia de fuga en stdout/stderr)",
+      "exitCode": 0,
+      "status": "ok",
+      "profile": "api-mistral/mistral-small-latest",
+      "attempts": 1,
+      "attemptOutcomes": ["ok"],
+      "elapsed": "1.269s",
+      "output": "no vacío y coincide con la palabra solicitada (respuesta íntegra retirada)",
+      "quota": "1 llamada real"
     }
   ],
   "liveFallback": {
@@ -72,20 +94,14 @@
     "quota": "2 llamadas reales (1 rechazada + 1 exitosa)"
   },
   "limits": [
-    "El cableado de producción no puede ejecutar ejecutores CLI: routerRegistryFor registra antigravity.New() y vibe.New() con TextOnly nil, el catálogo reporta «modo solo texto no demostrado» y run termina en exit 8. Verificado con el binario real: la corrida directa del gandalf.exe compilado terminó exit 8 sin intentos. No existe mecanismo para persistir el estado demostrado; la verificación lo inyectó por el punto de inyección del adaptador. Remitido a los propietarios (T005/T006/T008) para la revisión de cierre.",
-    "La sonda de Vibe (T006) no es demostrable con los modelos disponibles: el único modelo que corre en --agent ask intenta el efecto y agota su único turno sin texto. El bloqueo de herramientas sí se observó (efecto sin archivo), pero la definición exige un turno de texto completado. Remitido a T006.",
-    "api-mistral queda «no verificado» hasta que la credencial sea alcanzable (decisión del propietario: para después).",
-    "T010 permanece pendiente: 1 de 3 éxitos vivos, 1 de 2 controles de herramientas demostrados, fallback en vivo completado."
+    "Los protocolos directos openai y gemini están verificados en local con httptest; la verificación viva de API directa cubrió api-mistral según la spec («al menos una API directa»).",
+    "El cierre de la primera especificación (verify + review de rama completa) y la segunda especificación de la épica #15 (sync-skills-patrones) continúan después de T010."
   ],
   "errorsGenerated": [
-    "Corrida con el binario real de producción: exit 8 (sin perfiles elegibles) porque el cableado de producción no tiene vía para el estado text-only demostrado; no es un bug del router, es el hueco de cableado documentado en limits.",
-    "Sonda de Vibe con zai-glm-5-3-flash: exit 3 sin mensaje asistente (el modelo agota el turno en un efecto bloqueado); con mistral-large-4 y mistral-small-2603: exit 1 sin salida. Ninguno es error del código de gandalf; son comportamientos del ejecutor registrados como límite.",
-    "MISTRAL_API_KEY ausente en el entorno de los subprocesos del agente: la verificación de la API directa no pudo ejecutarse; aplazada por el propietario.",
-    "Ningún error en el código de gandalf durante la verificación: las corridas vivas que se ejecutaron terminaron exit 0 con JSON válido."
+    "En el primer intento con margen total de 90s, Paso 1 de VerifyTextOnly en Vibe consumió el deadline del contexto padre al heredar --time-limit; resuelto acotando Paso 1 a 20s en step1Ctx."
   ],
   "pending": [
-    "Éxito vivo de Vibe (requiere sonda demostrada o decisión del propietario de T006).",
-    "Éxito vivo de api-mistral (requiere MISTRAL_API_KEY alcanzable).",
-    "Cierre de T010 y revisión de cierre de la primera especificación."
+    "Verificación y revisión de cierre de la especificación router-02.",
+    "Segunda especificación de la épica #15 (sync-skills-patrones)."
   ]
 }

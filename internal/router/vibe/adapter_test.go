@@ -259,13 +259,48 @@ func TestAdapter(t *testing.T) {
 			},
 		},
 		{
-			name: "probe sin sesion reporta unknown",
+			name: "probe sin sesion reporta unknown y omite version",
 			run: func(t *testing.T) {
-				a := testAdapter(&fakeRunner{})
+				f := &fakeRunner{response: func(cmd *exec.Cmd) ([]byte, error) {
+					if hasFlag(cmd.Args[1:], "--version") {
+						return []byte("vibe 3.1.2\n"), nil
+					}
+					return nil, errors.New("llamada inesperada")
+				}}
+				a := testAdapter(f)
 				a.Session = func() router.AuthState { return router.AuthUnknown }
 				p := a.Probe(context.Background(), cliExecutor())
 				if p.Auth != router.AuthUnknown {
 					t.Fatalf("sesion inesperada: %+v", p)
+				}
+				if p.Reason != "" {
+					t.Fatalf("la version no debe enmascarar el motivo de autenticacion desconocida: %q", p.Reason)
+				}
+			},
+		},
+		{
+			name: "probe con solo texto sin demostrar omite version",
+			run: func(t *testing.T) {
+				f := &fakeRunner{response: func(cmd *exec.Cmd) ([]byte, error) {
+					if hasFlag(cmd.Args[1:], "--version") {
+						return []byte("vibe 3.1.2\n"), nil
+					}
+					return nil, errors.New("llamada inesperada")
+				}}
+				a := testAdapter(f)
+				a.TextOnly = func() router.TextOnlyState { return router.TextOnlyUnproven }
+				p := a.Probe(context.Background(), cliExecutor())
+				if p.TextOnly != router.TextOnlyUnproven || p.Reason != "" {
+					t.Fatalf("sondeo sin demostrar inesperado: %+v", p)
+				}
+			},
+		},
+		{
+			name: "textonly por defecto es enforced tras verificacion T010",
+			run: func(t *testing.T) {
+				a := New()
+				if a.textOnly() != router.TextOnlyEnforced {
+					t.Fatalf("esperaba TextOnlyEnforced por defecto, got %s", a.textOnly())
 				}
 			},
 		},
@@ -635,6 +670,43 @@ func TestAdapter(t *testing.T) {
 				state, reason := a.VerifyTextOnly(context.Background(), cliExecutor(), "mistral-large-latest")
 				if state != router.TextOnlyUnproven {
 					t.Fatalf("esperaba unproven ante efecto centinela, got %s (%s)", state, reason)
+				}
+			},
+		},
+		{
+			name: "verify textonly demostrado tras bloqueo en turno 1 (exit 3) y confirmacion de texto",
+			run: func(t *testing.T) {
+				exitBin := buildHelperSrc(t, exitSrc, "fake-vibe-exit")
+				calls := 0
+				inner := processRunner{}
+				r := &fakeRunner{response: func(cmd *exec.Cmd) ([]byte, error) {
+					calls++
+					if calls == 1 {
+						args := cmd.Args[1:]
+						v, ok := valueOf(args, "--prompt")
+						if !ok || !strings.Contains(v, "sentinel-") {
+							t.Errorf("la primera llamada no pide el centinela: %v", args)
+						}
+						exitCmd := exec.CommandContext(context.Background(), exitBin)
+						return inner.Run(context.Background(), exitCmd)
+					}
+					args := cmd.Args[1:]
+					v, ok := valueOf(args, "--prompt")
+					if !ok || v != "Responde solo con la palabra: listo." {
+						t.Errorf("la segunda llamada no confirma solo texto: %v", args)
+					}
+					return sessionMessages("listo"), nil
+				}}
+				a := testAdapter(r)
+				state, reason := a.VerifyTextOnly(context.Background(), cliExecutor(), "zai-glm-5-3-flash")
+				if state != router.TextOnlyEnforced {
+					t.Fatalf("esperaba enforced tras bloqueo + confirmacion, got %s (%s)", state, reason)
+				}
+				if calls != 2 {
+					t.Fatalf("esperaba 2 invocaciones en VerifyTextOnly, got %d", calls)
+				}
+				if !strings.Contains(reason, "intento bloqueado en turno único") {
+					t.Fatalf("motivo inesperado: %q", reason)
 				}
 			},
 		},

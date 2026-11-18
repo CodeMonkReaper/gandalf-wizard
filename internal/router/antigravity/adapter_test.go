@@ -228,13 +228,48 @@ func TestAdapter(t *testing.T) {
 			},
 		},
 		{
-			name: "probe sin sesion",
+			name: "probe sin sesion omite version",
 			run: func(t *testing.T) {
-				a := testAdapter(&fakeRunner{})
+				f := &fakeRunner{response: func(cmd *exec.Cmd) ([]byte, error) {
+					if hasFlag(cmd.Args[1:], "--version") {
+						return []byte("1.5.10\n"), nil
+					}
+					return nil, errors.New("llamada inesperada")
+				}}
+				a := testAdapter(f)
 				a.Session = func() router.AuthState { return router.AuthMissing }
 				p := a.Probe(context.Background(), cliExecutor())
 				if p.Auth != router.AuthMissing {
 					t.Fatalf("sesion inesperada: %+v", p)
+				}
+				if p.Reason != "" {
+					t.Fatalf("la version no debe enmascarar el motivo de falta de sesion: %q", p.Reason)
+				}
+			},
+		},
+		{
+			name: "probe con solo texto sin demostrar omite version",
+			run: func(t *testing.T) {
+				f := &fakeRunner{response: func(cmd *exec.Cmd) ([]byte, error) {
+					if hasFlag(cmd.Args[1:], "--version") {
+						return []byte("1.5.10\n"), nil
+					}
+					return nil, errors.New("llamada inesperada")
+				}}
+				a := testAdapter(f)
+				a.TextOnly = func() router.TextOnlyState { return router.TextOnlyUnproven }
+				p := a.Probe(context.Background(), cliExecutor())
+				if p.TextOnly != router.TextOnlyUnproven || p.Reason != "" {
+					t.Fatalf("sondeo sin demostrar inesperado: %+v", p)
+				}
+			},
+		},
+		{
+			name: "textonly por defecto es enforced tras verificacion T010",
+			run: func(t *testing.T) {
+				a := New()
+				if a.textOnly() != router.TextOnlyEnforced {
+					t.Fatalf("esperaba TextOnlyEnforced por defecto, got %s", a.textOnly())
 				}
 			},
 		},

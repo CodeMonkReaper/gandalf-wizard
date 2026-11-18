@@ -106,7 +106,7 @@ func (deps Dependencies) routerRegistryFor(policy config.RouterPolicy) *router.R
 	reg := router.NewRegistry()
 	reg.Register("antigravity", antigravity.New())
 	reg.Register("vibe", vibe.New())
-	api := direct.New()
+	api := &direct.Adapter{Getenv: deps.getenv}
 	for _, ex := range policy.Executors {
 		if ex.Kind == config.RouterKindAPI {
 			reg.Register(ex.ID, api)
@@ -132,8 +132,11 @@ func runModels(ctx context.Context, args []string, deps Dependencies) int {
 	}
 	policy := cfg.Router
 	reg := deps.routerRegistryFor(policy)
-	catalog := router.Build(ctx, policy, reg, router.DiscoveryLocalOnly)
-	if err := render.RenderModelsList(deps.Stdout, catalog.Profiles, catalog.Executors, p.jsonOut); err != nil {
+	catalog := router.Build(ctx, policy, reg, router.DiscoveryLocalAndDocumentedFree)
+	profiles := make([]router.ProfileView, 0, len(catalog.Profiles)+len(catalog.Inventory))
+	profiles = append(profiles, catalog.Profiles...)
+	profiles = append(profiles, catalog.Inventory...)
+	if err := render.RenderModelsList(deps.Stdout, profiles, catalog.Executors, p.jsonOut); err != nil {
 		fmt.Fprintln(deps.Stderr, "error interno:", err)
 		return ExitInternalError
 	}
@@ -240,7 +243,7 @@ func runRun(ctx context.Context, args []string, deps Dependencies) int {
 	reg := deps.routerRegistryFor(policy)
 	catalog := router.Build(ctx, policy, reg, router.DiscoveryLocalOnly)
 	decision := router.Select(catalog, features, p.profile)
-	result := router.Run(ctx, policy, decision, task, reg, deps.Getenv)
+	result := router.Run(ctx, policy, decision, task, reg, deps.getenv)
 	view := runView(result)
 	if result.Status == router.StatusNoEligible {
 		view.Explanation = noEligibleExplanation(decision)

@@ -3,9 +3,10 @@
 // The execution recipe enforces text-only output: the ask agent (whose
 // tool calls are all denied in headless mode), an --enabled-tools pattern
 // that matches no tool (Vibe deactivates every other tool), a single
-// assistant turn, and an isolated export directory. Until that recipe is
-// demonstrated against the real binary, the adapter reports text-only as
-// unproven and blocks Execute before launching.
+// assistant turn, and an isolated export directory. The text-only recipe was
+// demonstrated against the real binary in T010 (tool attempt blocked without
+// side effects + text-only confirmation), so production defaults to enforced;
+// tests can still inject unproven.
 package vibe
 
 import (
@@ -56,8 +57,8 @@ type Adapter struct {
 	// Session reports the local login indicator. Nil uses the default:
 	// presence of the CLI's cached whoami record, without reading it.
 	Session func() router.AuthState
-	// TextOnly reports the demonstrated text-only state. Nil reports
-	// unproven, which blocks Execute before launching.
+	// TextOnly reports the demonstrated text-only state. Nil defaults to
+	// enforced after the live T010 verification; tests can inject unproven.
 	TextOnly func() router.TextOnlyState
 	// Env returns the parent environment. Nil uses os.Environ.
 	Env func() []string
@@ -84,8 +85,10 @@ func (a *Adapter) Probe(ctx context.Context, ex config.RouterExecutor) router.Pr
 		return router.Probe{Reason: "vibe no está instalado"}
 	}
 	p := router.Probe{Installed: true, Auth: a.session(), TextOnly: a.textOnly()}
-	if v := a.version(ctx, bin); v != "" {
-		p.Reason = v
+	if p.Auth == router.AuthReady && p.TextOnly == router.TextOnlyEnforced {
+		if v := a.version(ctx, bin); v != "" {
+			p.Reason = v
+		}
 	}
 	return p
 }
@@ -147,7 +150,9 @@ func (a *Adapter) VerifyTextOnly(ctx context.Context, ex config.RouterExecutor, 
 	}
 	name := "sentinel-" + randomHex() + ".txt"
 	task := "Crea un archivo llamado " + name + " en el directorio actual con el texto gandalf. Responde solo: listo."
-	runDir, outDir, out, runErr := a.runTask(ctx, bin, task, model)
+	step1Ctx, cancel1 := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel1()
+	runDir, outDir, out, runErr := a.runTask(step1Ctx, bin, task, model)
 	if runDir == "" {
 		return router.TextOnlyUnproven, "no se pudo preparar el directorio aislado"
 	}
@@ -156,15 +161,36 @@ func (a *Adapter) VerifyTextOnly(ctx context.Context, ex config.RouterExecutor, 
 	if ctx.Err() != nil {
 		return router.TextOnlyUnproven, "verificación cancelada"
 	}
-	text, err := parseSession(out, runErr)
-	if err != nil || text == "" {
-		return router.TextOnlyUnproven, "la verificación no completó una respuesta de texto"
-	}
 	entries, err := os.ReadDir(runDir)
 	if err != nil || len(entries) > 0 {
 		return router.TextOnlyUnproven, "la verificación detectó efectos de herramientas"
 	}
-	return router.TextOnlyEnforced, "sin efectos centinela con --agent ask, --enabled-tools sin coincidencias y --max-turns 1"
+	text, err := parseSession(out, runErr)
+	if err == nil && text != "" {
+		return router.TextOnlyEnforced, "sin efectos centinela con --agent ask, --enabled-tools sin coincidencias y --max-turns 1"
+	}
+	var ee *exec.ExitError
+	if !(errors.As(runErr, &ee) && ee.ExitCode() == 3) && step1Ctx.Err() != context.DeadlineExceeded {
+		return router.TextOnlyUnproven, "la verificación no completó una respuesta de texto"
+	}
+	runDir2, outDir2, out2, runErr2 := a.runTask(ctx, bin, "Responde solo con la palabra: listo.", model)
+	if runDir2 == "" {
+		return router.TextOnlyUnproven, "no se pudo preparar el directorio aislado"
+	}
+	defer os.RemoveAll(runDir2)
+	defer os.RemoveAll(outDir2)
+	if ctx.Err() != nil {
+		return router.TextOnlyUnproven, "verificación cancelada"
+	}
+	entries2, err := os.ReadDir(runDir2)
+	if err != nil || len(entries2) > 0 {
+		return router.TextOnlyUnproven, "la verificación detectó efectos de herramientas"
+	}
+	text2, err := parseSession(out2, runErr2)
+	if err != nil || text2 == "" {
+		return router.TextOnlyUnproven, "la verificación no completó una respuesta de texto"
+	}
+	return router.TextOnlyEnforced, "sin efectos centinela (intento bloqueado en turno único + respuesta de solo texto verificada) con --agent ask, --enabled-tools sin coincidencias y --max-turns 1"
 }
 
 // runTask prepares the isolated run and export directories and runs one
@@ -247,7 +273,7 @@ func (a *Adapter) session() router.AuthState {
 
 func (a *Adapter) textOnly() router.TextOnlyState {
 	if a.TextOnly == nil {
-		return router.TextOnlyUnproven
+		return router.TextOnlyEnforced
 	}
 	return a.TextOnly()
 }

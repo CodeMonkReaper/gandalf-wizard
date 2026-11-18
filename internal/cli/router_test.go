@@ -15,10 +15,11 @@ import (
 
 // fakeRouterAdapter records invocations and answers with canned behavior.
 type fakeRouterAdapter struct {
-	mu       sync.Mutex
-	invoked  []string
-	probe    router.Probe
-	response func(context.Context, router.Execution) (string, error)
+	mu         sync.Mutex
+	invoked    []string
+	probe      router.Probe
+	candidates []router.Candidate
+	response   func(context.Context, router.Execution) (string, error)
 }
 
 func (f *fakeRouterAdapter) Probe(ctx context.Context, ex config.RouterExecutor) router.Probe {
@@ -26,6 +27,9 @@ func (f *fakeRouterAdapter) Probe(ctx context.Context, ex config.RouterExecutor)
 }
 
 func (f *fakeRouterAdapter) Discover(ctx context.Context, ex config.RouterExecutor) ([]router.Candidate, error) {
+	if f.candidates != nil {
+		return f.candidates, nil
+	}
 	return nil, router.ErrDiscoveryUnavailable
 }
 
@@ -189,6 +193,38 @@ func TestRouterCLI(t *testing.T) {
 				}
 				if noauth == nil || noauth["authorized"] != false || noauth["availability"] != "no autorizado" {
 					t.Fatalf("perfil no autorizado inesperado: %v", noauth)
+				}
+			},
+		},
+		{
+			name: "models list descubre candidatos sin cuota",
+			run: func(t *testing.T) {
+				c := newCaptured(t)
+				withRouterConfig(t, c, fiveExecutors, fiveProfiles)
+				reg := standardRegistry()
+				reg.Register("ok1", &fakeRouterAdapter{
+					probe: okProbe(),
+					candidates: []router.Candidate{
+						{Model: "modelo-a", Efforts: map[string]string{"medium": "medium"}},
+						{Model: "modelo-extra", Efforts: map[string]string{"high": "high"}},
+					},
+				})
+				c.deps.RouterRegistry = reg
+				if code := runCLI(t, c, "models", "list", "--json"); code != ExitOK {
+					t.Fatalf("exit inesperado: %d stderr=%s", code, c.stderr.String())
+				}
+				m := parseJSON(t, c.stdout.String())
+				profiles, ok := m["profiles"].([]any)
+				if !ok || len(profiles) != 6 {
+					t.Fatalf("esperaba 5 declarados + 1 de inventario: %v", m["profiles"])
+				}
+				first, _ := profiles[0].(map[string]any)
+				if first["id"] != "ok1/modelo-a" || first["origin"] != "descubierto" {
+					t.Fatalf("perfil confirmado no marcado como descubierto: %v", first)
+				}
+				extra, _ := profiles[5].(map[string]any)
+				if extra["id"] != "ok1/modelo-extra" || extra["origin"] != "descubierto" {
+					t.Fatalf("candidato extra inesperado: %v", extra)
 				}
 			},
 		},

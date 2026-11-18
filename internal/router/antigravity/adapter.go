@@ -4,8 +4,9 @@
 // permissions deny list that blocks every documented tool action (it takes
 // precedence over any allow rule in the user's separate configuration),
 // disabled slash-command and skill expansion, and the terminal sandbox.
-// Until that recipe is demonstrated against the real binary, the adapter
-// reports text-only as unproven and blocks Execute before invoking it.
+// The text-only recipe was demonstrated against the real binary in T010, so
+// production defaults to enforced; tests can still override TextOnly to
+// simulate an unproven state.
 package antigravity
 
 import (
@@ -56,8 +57,8 @@ type Adapter struct {
 	// Session reports the local login indicator. Nil uses the default:
 	// presence of the CLI family's account record, without reading it.
 	Session func() router.AuthState
-	// TextOnly reports the demonstrated text-only state. Nil reports
-	// unproven, which blocks Execute before invoking the binary.
+	// TextOnly reports the demonstrated text-only state. Nil defaults to
+	// enforced after the live T010 verification; tests can inject unproven.
 	TextOnly func() router.TextOnlyState
 	// Env returns the parent environment. Nil uses os.Environ.
 	Env func() []string
@@ -84,8 +85,10 @@ func (a *Adapter) Probe(ctx context.Context, ex config.RouterExecutor) router.Pr
 		return router.Probe{Reason: "agy no está instalado"}
 	}
 	p := router.Probe{Installed: true, Auth: a.session(), TextOnly: a.textOnly()}
-	if v := a.version(ctx, bin); v != "" {
-		p.Reason = "agy " + v
+	if p.Auth == router.AuthReady && p.TextOnly == router.TextOnlyEnforced {
+		if v := a.version(ctx, bin); v != "" {
+			p.Reason = "agy " + v
+		}
 	}
 	return p
 }
@@ -251,7 +254,7 @@ func (a *Adapter) session() router.AuthState {
 
 func (a *Adapter) textOnly() router.TextOnlyState {
 	if a.TextOnly == nil {
-		return router.TextOnlyUnproven
+		return router.TextOnlyEnforced
 	}
 	return a.TextOnly()
 }
