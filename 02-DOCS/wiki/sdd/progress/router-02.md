@@ -192,3 +192,8 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
   - `.gitignore`: `git check-ignore -v` confirma exclusión de `.env`, `.gandalf.json`, `01-TOOLS/vibe-bridge/models.json`, `whoami_cache.json` y `google_accounts.json`; `.vibe/hooks.toml` sigue rastreado
   - gate Go (`TestRepoSecurityGate`): prueba de paso (árbol rastreado e historial `origin/master..HEAD`) y prueba de bloqueo (patrones `mstrl_...`, `sk-...`, `AIza...`, `ghp_...`, PEM, archivos de entorno, sesiones y directorios locales) en verde
   - hooks Git: `pre-commit` y `pre-push` verificados por sintaxis, prueba aislada de bloqueo/paso y corrida real al commitear
+
+## Cierre (`verify` + `review`) — 2026-11-18
+- verify: **PASS** en `cef75ff` ([verifications/2026-11-18-router-02-closing.md](../verifications/2026-11-18-router-02-closing.md)) — `gofmt -l .` limpio en archivos de `router-02` (6 CRLF preexistentes de Foundation), `go vet ./...` vacío, `go build ./...` PASS, `go test -count=1 -cover ./...` 11 paquetes ok, `10/10` done-checks y `19/19` ACs en verde más `TestRepoSecurityGate`
+- review: **APPROVE** ([reviews/router-02.md](../reviews/router-02.md)) — ronda 1 en contexto frío (`421c7b8e`, tier 1) reportó `3 should-fix` + `1 nit`, todos corregidos en `cef75ff` (`Probe` en no autorizados, `walkKeys` en `case []any:`, `IsForbiddenCredentialKey` por subcadenas excluyendo `credential_env`, guardia `nil` en `AdapterFor`); ronda 2 cerró con `0` hallazgos nuevos
+- checkpoint: [sessions/2026-11-18-cierre-router-02.md](../sessions/2026-11-18-cierre-router-02.md) (pendiente de decisión del propietario: push/PR de `router-02` o segunda spec `sync-skills-patrones` de la épica #15)
