@@ -33,6 +33,7 @@ func (o *MemoryQueryOrchestrator) QueryProjectMemory(ctx context.Context, ws Wor
 	}
 
 	ops := []string{"search"}
+	sawInterruption := false
 
 	entries := make([]AttributedMemoryEntry, 0, len(searchResult.Hits))
 	for _, hit := range searchResult.Hits {
@@ -45,6 +46,10 @@ func (o *MemoryQueryOrchestrator) QueryProjectMemory(ctx context.Context, ws Wor
 		if derr != nil {
 			if errors.Is(derr, ErrAccessDenied) {
 				return MemoryQueryOutcome{Status: StatusAccessDenied}
+			}
+			if errors.Is(derr, ErrDetailInterrupted) {
+				sawInterruption = true
+				break
 			}
 			continue
 		}
@@ -66,8 +71,13 @@ func (o *MemoryQueryOrchestrator) QueryProjectMemory(ctx context.Context, ws Wor
 	}
 
 	status := StatusOK
-	if len(entries) == 0 {
+	switch {
+	case len(entries) == 0 && sawInterruption:
+		status = StatusIncomplete
+	case len(entries) == 0:
 		status = StatusEmpty
+	case sawInterruption:
+		status = StatusPartial
 	}
 
 	return MemoryQueryOutcome{
