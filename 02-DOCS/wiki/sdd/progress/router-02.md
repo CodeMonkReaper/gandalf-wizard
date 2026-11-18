@@ -61,3 +61,15 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
 - controls: tests ✅ (`go test ./...` 6 paquetes ok) · build ✅ (`go vet ./...`) · security ✅ (solo nombres de variables de credenciales; centinela verificado en política y errores) · traceability ✅ (AC5, AC13, AC14, AC16, AC17)
 - reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
 - errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; `gofmt -l .` reporta el falso positivo CRLF/LF preexistente documentado en la retro de cli-gandalf
+
+## T002 — 2026-11-18
+- status: complete · issue [#18](https://github.com/CodeMonkReaper/gandalf-wizard/issues/18) cerrada con close review
+- red: `go test ./internal/router -run '^TestCatalog$' -count=1` falló con catálogo vacío (índice fuera de rango: `Build` era stub)
+- green: misma suite ok, 13 subtests
+- files: `internal/router/types.go`, `internal/router/catalog.go`, `internal/router/catalog_test.go`
+- commit: `85580d3` (base `615f55a`)
+- risk: tier 1 (`rsc risk` sobre el diff real) — 1 revisor
+- review: 0 hallazgos (ronda 1); revisión del coordinador contra contrato, spec y §0
+- controls: tests ✅ (`go test ./...` 7 paquetes ok) · build ✅ (`go vet ./...`) · security ✅ (puerto sin cuota; descubrimiento solo autorizado+documentado; `Execute` nunca invocado por `Build`) · traceability ✅ (AC1, AC2, AC5, AC15, AC19)
+- decisión de diseño: `Availability` deriva del sondeo local (instalado + autenticación lista + solo texto demostrado); `Verification` separa la evidencia del modelo (descubrimiento confirmado); `Origin` distingue declarado/descubierto; el inventario de candidatos sin perfil declarado vive en `Catalog.Inventory` ordenado por ID y queda fuera de `Profiles` para que T003 lo excluya
+- errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un import sin uso (`errors`) detectado por el compilador y retirado antes del commit
