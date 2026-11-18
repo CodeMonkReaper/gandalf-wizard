@@ -102,6 +102,7 @@ type EffectiveConfig struct {
 	Caller            TrackedValue[string]
 	RomeroBaseURL     TrackedValue[string]
 	RomeroTimeout     TrackedValue[time.Duration]
+	Router            RouterPolicy
 	APIKeyPresent     bool
 	APIKeyOrigin      Origin
 	ProjectConfigPath string

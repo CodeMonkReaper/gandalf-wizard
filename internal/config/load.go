@@ -17,6 +17,7 @@ type configFile struct {
 	Project *string           `json:"project"`
 	Caller  *string           `json:"caller"`
 	Romero  *configFileRomero `json:"romero"`
+	Router  *configFileRouter `json:"router"`
 }
 
 // configFileRomero holds the ROMERO connection block of a configuration file.
@@ -31,6 +32,7 @@ type fileValues struct {
 	Caller   *string
 	BaseURL  *string
 	Timeout  *time.Duration
+	Router   *routerFileValues
 	Warnings []string
 }
 
@@ -100,6 +102,11 @@ func Load(input LoadInput) (EffectiveConfig, error) {
 		GlobalConfigPath:  globalLoaded,
 		Warnings:          warnings,
 	}
+	routerPolicy, err := mergeRouterPolicy(projectPath, projectFile.Router, globalPath, globalFile.Router)
+	if err != nil {
+		return EffectiveConfig{}, err
+	}
+	cfg.Router = routerPolicy
 	return cfg, nil
 }
 
@@ -199,13 +206,23 @@ func parseConfigFile(path string) (fileValues, error) {
 			values.Timeout = &d
 		}
 	}
+	if cf.Router != nil {
+		rv, err := parseRouterBlock(cf.Router, path)
+		if err != nil {
+			return fileValues{}, err
+		}
+		values.Router = rv
+	}
 	return values, nil
 }
 
-// rootKnownKeys and romeroKnownKeys define the admitted schema at each object level.
+// rootKnownKeys and friends define the admitted schema at each object level.
 var (
-	rootKnownKeys   = map[string]bool{"project": true, "caller": true, "romero": true}
-	romeroKnownKeys = map[string]bool{"base_url": true, "timeout": true}
+	rootKnownKeys     = map[string]bool{"project": true, "caller": true, "romero": true, "router": true}
+	romeroKnownKeys   = map[string]bool{"base_url": true, "timeout": true}
+	routerKnownKeys   = map[string]bool{"attempt_timeout": true, "executors": true, "profiles": true}
+	executorKnownKeys = map[string]bool{"id": true, "kind": true, "authorized": true, "protocol": true, "base_url": true, "credential_env": true}
+	profileKnownKeys  = map[string]bool{"id": true, "executor_id": true, "model": true, "efforts": true}
 )
 
 // inspectKeys walks the raw JSON tree rejecting credential keys and collecting
@@ -253,10 +270,18 @@ func knownForChild(known map[string]bool, key string) map[string]bool {
 	if known == nil || !known[key] {
 		return nil
 	}
-	if key == "romero" {
+	switch key {
+	case "romero":
 		return romeroKnownKeys
+	case "router":
+		return routerKnownKeys
+	case "executors":
+		return executorKnownKeys
+	case "profiles":
+		return profileKnownKeys
+	default:
+		return nil
 	}
-	return nil
 }
 
 // validateBaseURL checks that raw parses as an http/https URL with a host.
