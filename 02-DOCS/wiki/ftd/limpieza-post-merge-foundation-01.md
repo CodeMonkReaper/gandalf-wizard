@@ -32,8 +32,9 @@ Retirar el worktree local `.worktrees/consulta-memoria-romero` y su rama `feat/c
 - `Select-String -Path 02-DOCS/wiki/sdd/progress/consulta-memoria-romero.md -Pattern "^## T00[1-9]"` → 9 coincidencias (`T001` a `T009`, líneas 22–133).
 - `02-DOCS/wiki/index.md` actualizado con el estado cerrado de Issue #1 y #2, cierre `T001`–`T009`, evidencia viva de ROMERO y enlace a este documento FTD.
 - `rsc risk --json` → `{"tier":0,"classes":["docs"],"reviewers":0,"humanApproval":false,"escalate":null}`.
+- `gh repo edit --default-branch master` y `git push origin --delete chore/rsc-development-environment` completados; `git branch -a` muestra únicamente `master` en local y remoto.
 - Controles obligatorios:
   - tests / build / security scan de código: `not executed` (cambio exclusivo de documentación bajo `02-DOCS/`, `tier: 0`, sin cambios en código Go).
 
 ## Next
-Alineación documental consolidada en `master` y eliminación de la rama remota integrada `chore/rsc-development-environment`. Seleccionar el siguiente alcance en `gandalf-wizard-contexto-maestro.md`.
+Seleccionar el siguiente alcance en `gandalf-wizard-contexto-maestro.md`, abrir el Issue correspondiente e iniciar `specify`.
