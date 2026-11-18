@@ -255,7 +255,7 @@ func walkKeys(obj map[string]any, known map[string]bool, path string, values *fi
 		case []any:
 			for _, item := range val {
 				if child, ok := item.(map[string]any); ok {
-					if err := walkKeys(child, nil, path, values); err != nil {
+					if err := walkKeys(child, childKnown, path, values); err != nil {
 						return err
 					}
 				}

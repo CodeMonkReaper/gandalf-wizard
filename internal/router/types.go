@@ -121,6 +121,9 @@ func (r *Registry) Register(executorID string, a Adapter) {
 
 // AdapterFor resolves the adapter of an executor ID.
 func (r *Registry) AdapterFor(executorID string) (Adapter, bool) {
+	if r == nil || r.adapters == nil {
+		return nil, false
+	}
 	a, ok := r.adapters[executorID]
 	return a, ok
 }

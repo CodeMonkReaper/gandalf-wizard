@@ -179,6 +179,26 @@ func TestRouterPolicy(t *testing.T) {
 			},
 		},
 		{
+			name:       "credencial especifica de proveedor en archivo",
+			globalJSON: `{"router":{"executors":[{"id":"api-x","kind":"api","mistral_api_key":"` + routerSentinelSecret + `"}]}}`,
+			wantErr:    ErrForbiddenCredentialKey,
+			checkErr: func(t *testing.T, err error) {
+				if strings.Contains(err.Error(), routerSentinelSecret) {
+					t.Fatalf("el error revela el centinela: %s", err.Error())
+				}
+			},
+		},
+		{
+			name:       "claves desconocidas en executors y profiles emiten aviso sin bloquear",
+			globalJSON: `{"router":{"executors":[{"id":"antigravity","kind":"cli","authorised":true}],"profiles":[{"id":"p/uno","executor_id":"antigravity","model":"m","effort":"high"}]}}`,
+			check: func(t *testing.T, cfg EffectiveConfig) {
+				joined := strings.Join(cfg.Warnings, "\n")
+				if !strings.Contains(joined, "authorised") || !strings.Contains(joined, "effort") {
+					t.Fatalf("esperaba avisos de claves desconocidas en executors y profiles, got %v", cfg.Warnings)
+				}
+			},
+		},
+		{
 			name:       "ejecutor cli con campos de api",
 			globalJSON: `{"router":{"executors":[{"id":"antigravity","kind":"cli","base_url":"https://api.example"}]}}`,
 			wantErr:    ErrInvalidConfig,

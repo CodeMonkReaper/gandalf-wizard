@@ -305,6 +305,22 @@ func TestAdapter(t *testing.T) {
 			},
 		},
 		{
+			name: "probe no autorizado no lanza version",
+			run: func(t *testing.T) {
+				f := &fakeRunner{}
+				a := testAdapter(f)
+				ex := cliExecutor()
+				ex.Authorized = false
+				p := a.Probe(context.Background(), ex)
+				if f.count() != 0 {
+					t.Fatalf("probe lanzó proceso en ejecutor no autorizado (%d llamadas)", f.count())
+				}
+				if p.Reason != "" {
+					t.Fatalf("probe no autorizado no debe informar versión: %q", p.Reason)
+				}
+			},
+		},
+		{
 			name: "discover siempre unavailable sin descubrimiento documentado",
 			run: func(t *testing.T) {
 				f := &fakeRunner{}

@@ -85,7 +85,7 @@ func (a *Adapter) Probe(ctx context.Context, ex config.RouterExecutor) router.Pr
 		return router.Probe{Reason: "vibe no está instalado"}
 	}
 	p := router.Probe{Installed: true, Auth: a.session(), TextOnly: a.textOnly()}
-	if p.Auth == router.AuthReady && p.TextOnly == router.TextOnlyEnforced {
+	if ex.Authorized && p.Auth == router.AuthReady && p.TextOnly == router.TextOnlyEnforced {
 		if v := a.version(ctx, bin); v != "" {
 			p.Reason = v
 		}
