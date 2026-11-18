@@ -3,7 +3,7 @@ type: progress
 title: Progreso — Consulta de memoria de proyecto en ROMERO
 description: Registro incremental de tareas TDD, revisiones y controles por tarea para Foundation 0.1.
 tags: [sdd, progress, foundation, romero]
-timestamp: 2026-11-17T23:46:00Z
+timestamp: 2026-11-18T00:03:05Z
 topic: sdd
 slug: consulta-memoria-romero
 branch: feat/consulta-memoria-romero
@@ -69,3 +69,21 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/2
   - traceability: ✅ (`AC1, AC2, AC3, AC4, AC5, AC8, AC9`)
 - skill_resolution: `used: [implement, go, verify, review]` · `missing: []` · `fallback: []`
 - decision: ninguna desviación del plan; se desacoplaron `AllowCrossProjectSearchLeak` y `AllowCrossProjectDetailLeak` en `RomeroFakeAdapter` tras hallazgo `L2`; siguiente tarea `T004`
+
+## T004 — 2026-11-17
+- status: complete
+- commits: `038d7126bdf37167a6b0751dcbe7473e281171ad` (ronda 1), `93bc3809442dd730c6f71a3112487d13290da07f` (ronda 2) en `feat/consulta-memoria-romero`, worktree `.worktrees/consulta-memoria-romero`, base `29488c6`
+- implementation: `ProvenancePresenter`, `PresentedMemoryView`, `PresentedRow` y `Present(MemoryQueryOutcome)` en `internal/romero/presenter.go` (etiquetas canónicas, formato atribuido inerte sin ejecución de instrucciones, fallback `"Fuente de origen no disponible"`, `VigenciaActive`/`VigenciaSuperseded`, `defaultDegradedNotice` y default `fail-closed` a `LabelIncomplete`); cobertura en `internal/romero/presenter_test.go` (`AC1..AC9` aplicables y triangulación)
+- red: `go test -v ./internal/romero -run TestProvenancePresenter` falló en fase RED antes de implementar `internal/romero/presenter.go`
+- green: `go test -v ./internal/romero -run TestProvenancePresenter` pasó tras la implementación inicial (`038d712`)
+- triangulation: 8 subpruebas principales / 14 casos hoja en `PASS` tras corrección de ronda 2 (`93bc380`, `go test -count=1 -v ./internal/romero -run TestProvenancePresenter`; `go test -count=1 -cover ./...`: `94.9% of statements`) cubriendo `StatusOK`, `StatusEmpty`, `StatusIncomplete`, `StatusPartial` (con/sin filas), `StatusAccessDenied`/`StatusScopeRequired` opacos, aviso degradado en blanco, texto inerte (`AC6`), vigencia (`AC9`) y valor cero/desconocido `fail-closed`
+- files: `internal/romero/presenter.go`, `internal/romero/presenter_test.go`
+- risk: tier 1 (`rsc risk --base 29488c6936e5b75877b4466250fc507a30de7462 --json`, 1 revisor)
+- review: ronda 1 → `3 reported → 3 unique (L3 should-fix, L4 should-fix, L5 nit) → changes-needed`; ronda 2 (`93bc380`, `b96f5d02-0067-4927-aa6b-65f9e323d190`) → `0 new → VERDICT: pass` (`L3: fixed`, `L4: fixed`, `L5: fixed`, `0% false rate`)
+- controls:
+  - tests: ✅ (`go test -count=1 -v ./internal/romero -run TestProvenancePresenter` y `go test -count=1 -cover ./...` en `PASS` al `94.9%`; `-race` no ejecutado por `CGO_ENABLED=0`)
+  - build: ✅ (`gofmt -l .` vacío; `go vet ./...` en `PASS`)
+  - security: ✅ (solo librería estándar `strings`; resúmenes renderizados como datos inertes; `StatusAccessDenied`/`StatusScopeRequired` eliminan filas y avisos residuales; estado desconocido cierra en `LabelIncomplete`)
+  - traceability: ✅ (`AC1, AC2, AC3, AC4 [opacidad], AC5, AC6, AC8, AC9`)
+- skill_resolution: `used: [implement, go, verify, review]` · `missing: []` · `fallback: []`
+- decision: ninguna desviación del plan; se cerró el `default` en `Present` a `LabelIncomplete` (`fail-closed`) tras hallazgo `L4` y se endurecieron las aserciones en `presenter_test.go` tras `L3`/`L5`; siguiente tarea `T005`
