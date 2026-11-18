@@ -104,3 +104,13 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/5
 - review: ronda 1/3, 0 hallazgos nuevos; VERDICT: pass. Corrección durante el rojo: el test esperaba harness FAIL sin detecciones, pero la referencia 4 de la spec muestra [OK] informativo — la spec manda
 - controls: tests ✅ (`go test ./...` 6 paquetes ok) · build ✅ (`gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (credencial solo como presencia; detalle de configuración saneado por ConfigError) · traceability ✅ (AC3, AC6, AC7, AC8)
 - decision: check de harness es informativo (nunca FAIL) según referencia 4; romero.conexión no se sondea sin URL y falla con remedio explícito
+
+## T008 — 2026-11-18
+- status: complete (commit `f110a51`, sub-Issue #12)
+- red: `go test -v ./internal/cli -run TestCLIDispatch` falló en 30 aserciones con stub
+- green: mismo comando en PASS; `go test -count=1 -cover ./internal/cli` 80.9%; binario `cmd/gandalf` compila y prueba de humo real OK (config init/show, doctor con harnesses reales detectados, memory query 401 contra ROMERO vivo → código 4)
+- files: `internal/cli/run.go`, `internal/cli/run_test.go`, `cmd/gandalf/main.go`, `internal/config/load.go` (corrección GlobalConfigPath)
+- risk: tier 1 (`rsc risk --base b51cc2d --json`: `classes: ["default","docs"]`, `reviewers: 1`)
+- review: ronda 1/3, 1 nit → L7 intentional (args extra ignorados en config show); VERDICT: pass
+- controls: tests ✅ (6 paquetes ok) · build ✅ (`go build ./...`, `gofmt -l` vacío, `go vet ./...` PASS) · security ✅ (token leído del entorno por llamada, nunca almacenado ni impreso; AC12: 0 llamadas sin proyecto) · traceability ✅ (AC1-AC8, AC12 cubiertos a nivel unitario; AC9-AC13 van en T009)
+- decision: corrección transversal de T002 descubierta aquí — GlobalConfigPath solo se informa si el archivo global existe (referencia 4: «global: no encontrado»); el timeout de contexto se aplica solo con configuración cargada
