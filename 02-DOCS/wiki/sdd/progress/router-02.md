@@ -127,3 +127,17 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
 - límite registrado: la corrida de investigación de la forma JSON hizo una llamada parcial al modelo (exit 3 con guardas `--max-turns 0 --max-price 0 --time-limit 20`); consumió una cantidad mínima de cuota; la evidencia viva del centinela queda para T010 con autorización
 - reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
 - errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un bug del helper de pruebas (`sessionMessages` interpolaba un `\n` real dentro del JSON y lo invalidaba) se detectó con un test de depuración temporal y se corrigió escapando con `json.Marshal` antes del verde
+
+## T007 — 2026-11-18
+- status: complete · issue [#22](https://github.com/CodeMonkReaper/gandalf-wizard/issues/22) cerrada con close review
+- red: `go test ./internal/router/direct -run '^TestAdapter$' -count=1` falló por aserción en 18 de 24 subtests (los 6 restantes esperan el default del stub: unavailable/ErrDiscoveryUnavailable); sin pánico
+- green: misma suite ok, 25 subtests (tras añadir el subtest del origen no https en la revisión)
+- files: `internal/router/direct/adapter.go`, `internal/router/direct/adapter_test.go`
+- commit: `b2f105f` (base `e9bd09b`)
+- risk: tier 1 (`rsc risk` sobre el diff real) — 1 revisor
+- review: 2 reportados → 2 únicos → 0 blocker; 1 should-fix (L16, el adaptador confiaba en la validación https de config y no verificaba el esquema antes de adjuntar la credencial) y 1 nit (L17, handlers bloqueantes sin `defer close` colgaban la limpieza en la ruta de fallo) corregidos en el mismo commit (amend)
+- controls: tests ✅ (`go test ./...` 10 paquetes ok) · build ✅ (`go vet ./...`) · security ✅ (credencial solo al origen https verificado por el adaptador; sin redirects a nivel de transporte; sin reintentos; sin herramientas ni streaming; motivos de cadena fija sin cuerpo, URL ni centinela) · traceability ✅ (AC1, AC2, AC5, AC6, AC11–AC13, AC15, AC16, AC18)
+- decisiones de diseño: registradas en [decisions.md](../decisions.md) — un adaptador por protocolo con extensión por configuración, rutas derivadas por protocolo con modelo escapado en gemini, Bearer/x-goog-api-key, esfuerzo solo traducible (reasoning.effort / thinkingBudget entero / nunca en mistral), RoundTrip sin redirects, Probe local con presencia≠validez, Discover siempre unavailable, extracción por protocolo descartando razonamiento
+- investigación documental: formas de Responses (output/output_text), Chat Completions (choices/message/content) y GenerateContent (candidates/content/parts con thought) contrastadas con la documentación enlazada del issue
+- reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
+- errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; un error de compilación del rojo (`srv.Certificate` es método en Go 1.27, no campo) se corrigió antes de la primera corrida
