@@ -44,10 +44,7 @@ func (o *MemoryQueryOrchestrator) QueryProjectMemory(ctx context.Context, ws Wor
 		ops = append(ops, "getDetail")
 		if derr != nil {
 			if errors.Is(derr, ErrAccessDenied) {
-				return MemoryQueryOutcome{
-					Status:     StatusAccessDenied,
-					AuditTrail: AuditTrail{Operations: ops},
-				}
+				return MemoryQueryOutcome{Status: StatusAccessDenied}
 			}
 			continue
 		}

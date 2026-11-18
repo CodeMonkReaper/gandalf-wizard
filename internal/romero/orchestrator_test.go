@@ -151,6 +151,50 @@ func TestOrchestrator_ScopeAndPermissions(t *testing.T) {
 			}
 		}
 	})
+	t.Run("DetailLevelCrossProjectFilteredViaEmptyHitProjectID", func(t *testing.T) {
+		// Hit arrives with empty ProjectID (passes the hit filter), but the detail
+		// comes back from another project and must be filtered at detail level.
+		adapter := &RomeroFakeAdapter{
+			OmitProjectIDInSearch:       true,
+			AllowCrossProjectDetailLeak: true,
+			Records: []FakeMemoryRecord{
+				{MemoryID: "M1", ProjectID: "Faro", Summary: "ok", SourceRef: "F1", MatchQueries: []string{"x"}},
+				{MemoryID: "M9", ProjectID: "OtroProyecto", Summary: "leak detail", SourceRef: "F9", MatchQueries: []string{"x"}},
+			},
+		}
+		orch := NewMemoryQueryOrchestrator(adapter)
+		outcome := orch.QueryProjectMemory(context.Background(), newFaroWorkspace(), "x")
+		for _, e := range outcome.Entries {
+			if e.MemoryID == "M9" {
+				t.Errorf("detail-level cross-project leak: M9 present")
+			}
+		}
+		for _, e := range outcome.Entries {
+			if e.MemoryID == "M1" {
+				return // M1 confirmed, M9 filtered — pass
+			}
+		}
+		t.Errorf("M1 not confirmed; entries: %v", outcome.Entries)
+	})
+	t.Run("DetailAccessDeniedHidesEverything", func(t *testing.T) {
+		adapter := &RomeroFakeAdapter{
+			DeniedMemoryIDs: map[string]bool{"M1": true},
+			Records: []FakeMemoryRecord{
+				{MemoryID: "M1", ProjectID: "Faro", Summary: "ok", SourceRef: "F1", MatchQueries: []string{"x"}},
+			},
+		}
+		orch := NewMemoryQueryOrchestrator(adapter)
+		outcome := orch.QueryProjectMemory(context.Background(), newFaroWorkspace(), "x")
+		if outcome.Status != StatusAccessDenied {
+			t.Errorf("status: got %q, want %q", outcome.Status, StatusAccessDenied)
+		}
+		if len(outcome.Entries) != 0 {
+			t.Errorf("entries leaked on detail denial: %d", len(outcome.Entries))
+		}
+		if len(outcome.AuditTrail.Operations) != 0 {
+			t.Errorf("audit trail leaks hit count on denial: %v", outcome.AuditTrail.Operations)
+		}
+	})
 	t.Run("AccessDeniedHidesEverything", func(t *testing.T) {
 		adapter := &RomeroFakeAdapter{DeniedProjects: map[string]bool{"Faro": true}}
 		orch := NewMemoryQueryOrchestrator(adapter)
@@ -162,7 +206,9 @@ func TestOrchestrator_ScopeAndPermissions(t *testing.T) {
 			t.Errorf("entries leaked: %d", len(outcome.Entries))
 		}
 	})
-	t.Run("EmptyProjectIDHitFiltered", func(t *testing.T) {
+	t.Run("EmptyProjectIDHitAllowedThrough", func(t *testing.T) {
+		// A hit with empty ProjectID passes the hit filter (per T005 formula) and is
+		// confirmed via detail when the detail's ProjectID matches the scope.
 		adapter := &RomeroFakeAdapter{
 			OmitProjectIDInSearch: true,
 			Records: []FakeMemoryRecord{
@@ -171,10 +217,8 @@ func TestOrchestrator_ScopeAndPermissions(t *testing.T) {
 		}
 		orch := NewMemoryQueryOrchestrator(adapter)
 		outcome := orch.QueryProjectMemory(context.Background(), newFaroWorkspace(), "x")
-		for _, e := range outcome.Entries {
-			if e.MemoryID == "" {
-				t.Errorf("empty ProjectID hit not filtered")
-			}
+		if len(outcome.Entries) != 1 || outcome.Entries[0].MemoryID != "M1" {
+			t.Errorf("empty-ProjectID hit should be confirmed via detail; entries: %v", outcome.Entries)
 		}
 	})
 }
