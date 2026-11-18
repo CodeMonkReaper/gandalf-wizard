@@ -184,3 +184,11 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
 - evidencia: [verifications/2026-11-18-router-02-live-verification.json](../verifications/2026-11-18-router-02-live-verification.json) (depurada: sin respuestas íntegras, sin claves, sin diagnósticos crudos)
 - límites remitidos: los protocolos directos `openai` y `gemini` quedan verificados en local con `httptest` (la spec pide al menos una API directa en vivo); siguen pendientes la verificación/revisión de cierre de `router-02` y la segunda spec (`sync-skills-patrones`) de la épica #15
 - errores generados: en el primer intento de sonda viva de Vibe con margen total de 90 s, Paso 1 consumió el deadline del contexto padre al traducirse en `--time-limit`; corregido acotando Paso 1 a un subcontexto de 20 s (`step1Ctx`)
+
+## Seguridad de repositorio — 2026-11-18
+- status: complete (higiene de repositorio solicitada antes del cierre de `router-02`)
+- archivos: `.gitignore`, `internal/cli/repo_security_test.go`, más hooks locales `.git/hooks/pre-commit` y `.git/hooks/pre-push`
+- controls:
+  - `.gitignore`: `git check-ignore -v` confirma exclusión de `.env`, `.gandalf.json`, `01-TOOLS/vibe-bridge/models.json`, `whoami_cache.json` y `google_accounts.json`; `.vibe/hooks.toml` sigue rastreado
+  - gate Go (`TestRepoSecurityGate`): prueba de paso (árbol rastreado e historial `origin/master..HEAD`) y prueba de bloqueo (patrones `mstrl_...`, `sk-...`, `AIza...`, `ghp_...`, PEM, archivos de entorno, sesiones y directorios locales) en verde
+  - hooks Git: `pre-commit` y `pre-push` verificados por sintaxis, prueba aislada de bloqueo/paso y corrida real al commitear

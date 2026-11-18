@@ -122,3 +122,23 @@
 .vibe/agents/tester.toml
 .vibe/config.toml
 gandalf.exe
+
+# Secretos, variables de entorno y sesiones locales (P5)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*credentials*.json
+*whoami_cache*.json
+*google_accounts*.json
+.gandalf.json
+.vibe/sessions/
+.vibe/logs/
+.vibe/worktrees/
+01-TOOLS/vibe-bridge/
+02-DOCS/security/
+*.exe
+*.test
+_live_*
