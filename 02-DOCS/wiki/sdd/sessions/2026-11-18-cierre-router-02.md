@@ -19,9 +19,8 @@ topic: sdd
 
 ## Pendiente exactamente
 
-Decisión del propietario entre:
-1. **Aterrizar `router-02` ahora (`ship`):** autorizar `git push -u origin feat/router-02` y abrir PR hacia `master` (constitución P5; el PR lleva `Refs #15`, Testing, Risk, How to revert y `Q1`–`Q8`, sin cerrar `#15` hasta completar `sync-skills-patrones`).
-2. **Continuar en rama con `sync-skills-patrones`:** abrir una nueva rama (o tras mergear `router-02`) e iniciar `specify` para la sincronización reproducible de skills y patrones diferida desde 0.1.
+- **PR abierto:** [PR #27](https://github.com/CodeMonkReaper/gandalf-wizard/pull/27) (`feat/router-02` → `master`, `Refs #15`, tier 1). El merge queda en manos del propietario (constitución P5).
+- **Post-merge:** actualizar `master`, borrar la rama `feat/router-02` si corresponde, archivar `router-02` e iniciar `specify` para la segunda spec (`sync-skills-patrones`) que cerrará la épica [#15](https://github.com/CodeMonkReaper/gandalf-wizard/issues/15).
 
 ## Notas de relevo
 
