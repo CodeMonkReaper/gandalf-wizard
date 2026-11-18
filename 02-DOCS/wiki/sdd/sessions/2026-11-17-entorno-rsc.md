@@ -3,7 +3,7 @@ type: checkpoint
 title: Preparación del entorno RSC
 description: Punto de relevo entre Vibe, Codex y Antigravity antes del desarrollo.
 tags: [sdd, checkpoint, harness]
-timestamp: 2026-11-17T23:46:00Z
+timestamp: 2026-11-18T00:03:05Z
 topic: sdd
 ---
 
@@ -16,6 +16,6 @@ topic: sdd
 - Hecho: onboarding aceptado aplicado, 34 skills compartidas (incluida `go`), `doctor` saludable en los tres targets; permisos automáticos Git y knowledge-sync desactivados. Evidencia en [verificación](../verifications/2026-11-17-entorno-rsc.json).
 - Artefactos activos: [constitución v1.2.0](../constitution.md), [configuración SDD](../config.yaml), [decisiones](../decisions.md), [instalación/capacidades](../../harness/installation.md), [REVIEW.md](../../../../REVIEW.md).
 - El propietario aprobó la versión aclarada de la [consulta de memoria en ROMERO](../specs/consulta-memoria-romero.md) (`status: approved`, nueve casos de aceptación). En `clarify` eligió mostrar las decisiones vigentes y las sustituidas, identificando estas últimas en el caso 9. [Verificación documental](../verifications/2026-11-17-consulta-memoria-romero.json)
-- Siguiente acción. Repositorio público y Issues #1/#2 creados; constitución enmendada a `v1.2.0` exigiendo Issues en todo trabajo. Tareas `T001` (`c718f55`), `T002` (`55c60f9`) y `T003` (`4bfee12`/`62b4a28`, ronda 2 `VERDICT: pass`) completadas en `.worktrees/consulta-memoria-romero` (`feat/consulta-memoria-romero`). Siguiente paso: ejecutar `T004` (`ProvenancePresenter`) bajo el Issue #2. La prueba de integración requiere una instancia autorizada.
+- Siguiente acción. Repositorio público y Issues #1/#2 creados; constitución enmendada a `v1.2.0` exigiendo Issues en todo trabajo. Tareas `T001` (`c718f55`), `T002` (`55c60f9`), `T003` (`4bfee12`/`62b4a28`, ronda 2 `VERDICT: pass`) y `T004` (`038d712`/`93bc380`, ronda 2 `VERDICT: pass`) completadas en `.worktrees/consulta-memoria-romero` (`feat/consulta-memoria-romero`). Siguiente paso: ejecutar `T005` (orquestación en dos pasos, aislamiento y garantía de solo lectura en `internal/romero/orchestrator.go`) bajo el Issue #2. La prueba de integración requiere una instancia autorizada.
 - Límites: no se ha probado invocación efectiva de subagentes ni paridad de guards; memoria automática no soportada por el fork en Vibe/Antigravity. La suite completa del fork no está verde en Windows. Consultar los límites operativos antes de afirmar un control determinista.
 - Antes de relevar: actualizar este checkpoint o crear uno nuevo y enlazarlo desde `wiki/index.md`; conservar evidencia verificable sin transcripciones ni secretos.
