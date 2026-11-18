@@ -1,0 +1,13 @@
+slug: router-02
+state: shipped
+issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
+pr: https://github.com/CodeMonkReaper/gandalf-wizard/pull/27
+merge_commit: abf5901641c596f959b4595bb1c2eef305d0c338
+merged_at: 2026-11-18T16:26:34Z
+branch: feat/router-02 (borrada en remoto y local tras el merge)
+sub_issues_closed: [17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+verification: PASS (02-DOCS/wiki/sdd/verifications/2026-11-18-router-02-closing.md)
+live_verification: 02-DOCS/wiki/sdd/verifications/2026-11-18-router-02-live-verification.json
+review: APPROVE (02-DOCS/wiki/sdd/reviews/router-02.md)
+followup_epic: https://github.com/CodeMonkReaper/gandalf-wizard/issues/28
+archive_date: 2026-11-18

@@ -6,8 +6,8 @@ tags: [sdd, spec, router]
 timestamp: 2026-11-18T12:30:00Z
 topic: sdd
 slug: router-02
-status: clarified
-branch: feat/router-02
+status: shipped
+branch: feat/router-02 (mergeada vía PR #27, abf5901; rama borrada)
 issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
 ---
 
