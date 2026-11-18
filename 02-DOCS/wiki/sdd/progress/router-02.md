@@ -154,3 +154,17 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/15
 - decisiones de diseño: registradas en [decisions.md](../decisions.md) — códigos 8/9/10, defaults media/medio, doctor informativo sin sumar fallos, registry de producción por ID, Ctrl+C = os.Interrupt con build tags por plataforma
 - reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
 - errores generados: ninguno en el código final; el rojo inicial fue el esperado de TDD; corregidos antes del verde: pánico de índice en `routeView` con lista vacía (`Ordered[1:]`), `schema_version`/`command` vacíos en los JSON de route y run, subtest de doctor que comparaba fallos absolutos en vez de contra la línea base; `syscall.SIGBREAK` y `syscall.GenerateConsoleCtrlEvent` no existen en Go 1.27 (resuelto: el runtime mapea ambos eventos de consola a os.Interrupt y el evento de la prueba se envía con LazyDLL); el primer commit arrastró por accidente `gandalf.exe` y configs locales de `.vibe/` (corregido con amend y `.gitignore`)
+
+## T009 — 2026-11-18
+- status: complete · issue [#25](https://github.com/CodeMonkReaper/gandalf-wizard/issues/25) cerrada con close review
+- red: `go test ./internal/cli -run '^TestRouterAcceptance$' -count=1` no existía (cero coincidencias); tras escribirla, AC2 falló por aserción: el motivo de indisponibilidad mostraba la descripción estática del protocolo del adaptador directo en vez de «falta la credencial»
+- green: misma suite ok — 19 subtests identificados por AC (AC1–AC19), verificado con `-v`
+- regresión documentada y remitida a su tarea propietaria (T007): el `Probe` del adaptador directo ponía una descripción de protocolo en `Reason` y el catálogo prefiere el motivo del adaptador, enmascarando la causa específica; corregido dejando el `Reason` vacío en el sondeo sano (el catálogo rellena «falta la credencial» / «autenticación desconocida») y actualizando la aserción de T007 a la semántica corregida; el contrato no cambió
+- files: `internal/cli/router_acceptance_test.go`, `internal/router/direct/adapter.go`, `internal/router/direct/adapter_test.go`
+- commit: `13fae84` (base `5df557c`)
+- risk: tier 1 (`rsc risk` sobre el diff real) — 1 revisor
+- review: 2 reportados → 2 únicos → 0 blocker; 2 nits (L21, cancelación de AC11 por sondeo con plazo mágico en vez de señal determinista; L22, comentario de `countingAdapter` impreciso sobre el alcance del conteo) corregidos en el mismo commit (amend)
+- controls: tests ✅ (`go test ./...` 11 paquetes ok; `TestRouterAcceptance` 19 subtests) · build ✅ (`go vet ./...`) · security ✅ (centinela buscado en stdout, stderr y todos los archivos del entorno temporal tras éxito y fallo en models list, route, run y doctor; config con credencial rechazada con 3 sin revelar el valor; sin cuota: solo simuladores y transporte inyectado) · traceability ✅ (AC1–AC19)
+- decisiones de diseño: registradas en [decisions.md](../decisions.md) — suite de aceptación por AC con ejecutores falsos y clientes inyectados; `Reason` del sondeo solo explica problemas
+- reviewer: coordinador con diff completo como evidencia (este entorno no expone herramienta de subagentes); registrado como limitación
+- errores generados: ninguno en el código final; la regresión de AC2 (motivo enmascarado) se corrigió en la tarea propietaria antes del commit; el rojo inicial fue el esperado de TDD
