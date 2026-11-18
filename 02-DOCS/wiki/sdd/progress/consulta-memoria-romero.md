@@ -15,6 +15,22 @@ issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/2
 
 > Issue vinculado: [#2](https://github.com/CodeMonkReaper/gandalf-wizard/issues/2) · Repositorio: [CodeMonkReaper/gandalf-wizard](https://github.com/CodeMonkReaper/gandalf-wizard)
 
+
+## T006 — 2026-11-18
+- status: complete · commit: e588a4e · review tier-1 PASS ronda 1 · coverage 94.8%
+- StatusIncomplete/Partial/Empty, degraded notice, VigenciaSuperseded from explicit metadata
+
+## T007 — 2026-11-18
+- status: complete · commits: 3dedb28, 3da9721 · review PASS tras fix (ErrDetailInterrupted seam)
+- REST adapter net/http, 4 MiB cap, zero-UUID mapping, contract tests 9/9
+
+## T008 — 2026-11-18
+- status: complete · commit: f5e0170 · AC1-AC9 end-to-end PASS
+
+## T009 — 2026-11-18
+- status: complete · commit: 075f269 · gate: gofmt vacío, vet PASS, 15/15 tests, 90.8%
+- Issue #2 CERRADO. Pendiente diferido: integración con instancia ROMERO autorizada.
+
 ## Decision queue
 
 *(Vacía — sin entradas `blocking` ni `review-after` pendientes.)*
