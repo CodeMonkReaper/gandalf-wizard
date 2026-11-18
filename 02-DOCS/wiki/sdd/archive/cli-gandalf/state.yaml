@@ -1,0 +1,11 @@
+slug: cli-gandalf
+state: shipped
+issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/5
+pr: https://github.com/CodeMonkReaper/gandalf-wizard/pull/14
+merge_commit: c81a536b14eac14606007a278a9785359cbc27a2
+merged_at: 2026-11-18T12:06:43Z
+branch: feat/cli-gandalf (borrada en remoto y local tras el merge)
+sub_issues_closed: [6, 7, 8, 9, 10, 11, 12, 13]
+verification: PASS (02-DOCS/wiki/sdd/verifications/2026-11-18-cli-gandalf-closing.md)
+review: APPROVE (02-DOCS/wiki/sdd/reviews/cli-gandalf.md)
+archive_date: 2026-11-18

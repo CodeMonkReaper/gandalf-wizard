@@ -6,8 +6,8 @@ tags: [sdd, spec, foundation, cli, config, doctor]
 timestamp: 2026-11-18T02:15:00Z
 topic: sdd
 slug: cli-gandalf
-status: approved-autopilot
-branch: feat/cli-gandalf
+status: shipped
+branch: feat/cli-gandalf (mergeada vía PR #14, c81a536; rama borrada)
 issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/5
 ---
 
