@@ -141,3 +141,18 @@ slug: sync-skills-patrones
   - **Estado**: completo. Nivel de revisión 1 (`rsc risk --base ac6e18a --json`: tier 1, 1 revisor, sin aprobación humana).
   - **Revisión**: ronda 1 (`23b5d31`, revisor en contexto fresco) → 5 hallazgos (`L19`–`L23`: 1 blocker ACLs privados en Windows, 3 should-fix, 1 nit; `changes-needed`). Todos corregidos en `f2fbc9c` (añadiendo `syncfs.ScopedProject.RestrictDir` con DACL protegido `D:P(A;OICI;FA;;;<SID>)`, verificación de ACLs y respaldo pre-escritura en `TestSyncApply`, rechazo de `OperationID` duplicado y `StatusRejected` en fallos previos a `pending.json`) y marcados `fixed` en el ledger. Ronda 2 (`f2fbc9c`, revisor en contexto fresco) → `VERDICT: pass` (0 hallazgos).
   - **Controles ejecutados**: `gofmt -l internal/syncfs internal/projectsync` (limpio), `go vet ./...` (ok), `go build ./...` (ok), compilación cruzada `GOOS=linux GOARCH=amd64 go build ./...` (ok), `go test -count=1 -v ./internal/projectsync -run '^TestSyncApply$'` (6/6 PASS), `go test -count=1 ./...` (15/15 paquetes en verde). Trazabilidad AC-03, AC-04, AC-05, AC-06, AC-07, AC-08.
+
+## T006 · 2026-11-19
+
+- **Tarea / Issue**: T006 / [#34](https://github.com/CodeMonkReaper/gandalf-wizard/issues/34) — restaurar operaciones y reanudar la recuperación en `internal/projectsync`.
+- **Estado previo (RED)**: el coordinador creó el stub [restore.go](../../../../internal/projectsync/restore.go) y el test inicial [restore_test.go](../../../../internal/projectsync/restore_test.go). Ejecutó `go test -count=1 -v ./internal/projectsync -run '^TestSyncRestore$'` y confirmó el fallo esperado (`not implemented` en 3/3 subtests).
+- **Delegación a Vibe (intento 1)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t006-restore` · tier `balanced` (perfil `developer`) · solicitado/efectivo `zai-glm-5-3`.
+  - **Run ID / Estado**: `e787b56f-a3b3-436d-b2b3-815b44f57f72` · `DONE_WITH_CONCERNS` (exit 0, 371.2 s; worker sin shell).
+  - **Trabajo realizado por Vibe**: implementó [restore.go](../../../../internal/projectsync/restore.go) y añadió 2 subpruebas de borde en [restore_test.go](../../../../internal/projectsync/restore_test.go).
+  - **Verificación y ajustes del coordinador**: ajustó 3 desempaquetados `(val, err)` en `Change`/`Observe` (`05776ce`).
+- **Cierre y revisión de T006**:
+  - **Estado**: completo. Nivel de revisión 1 (`rsc risk --base 06760bf --json`: tier 1, 1 revisor, sin aprobación humana).
+  - **Revisión**: ronda 1 (`05776ce`, revisor en contexto fresco) → 3 hallazgos (`L24`–`L26`: 1 blocker recibos al restaurar actualizaciones de skill, 2 should-fix `pending.json` de otra operación y orden `persistReceipts` antes de `EntryRestored`; `changes-needed`). Todos corregidos en `31b8c71` (con 2 subpruebas de regresión nuevas) y marcados `fixed` en el ledger. Ronda 2 (`31b8c71`, revisor en contexto fresco) → `VERDICT: pass` (0 hallazgos).
+  - **Controles ejecutados**: `gofmt -l internal/projectsync` (limpio), `go vet ./...` (ok), `go build ./...` (ok), compilación cruzada `GOOS=linux GOARCH=amd64 go build ./...` (ok), `go test -count=1 -v ./internal/projectsync -run '^TestSyncRestore$'` (7/7 PASS), `go test -count=1 ./...` (15/15 paquetes en verde). Trazabilidad AC-05, AC-06, AC-07.
