@@ -317,6 +317,9 @@ func TestSyncPreview(t *testing.T) {
 			t.Fatalf("expected different non-empty view IDs for different selections: %q vs %q", v1.ID, v2.ID)
 		}
 		otherRoot := t.TempDir()
+		if err := os.WriteFile(filepath.Join(otherRoot, "AGENTS.md"), []byte(foreignAgents), 0o644); err != nil {
+			t.Fatalf("write other AGENTS.md: %v", err)
+		}
 		otherProj, err := syncfs.OpenProject(otherRoot)
 		if err != nil {
 			t.Fatalf("OpenProject other: %v", err)
@@ -326,15 +329,88 @@ func TestSyncPreview(t *testing.T) {
 		if _, err := otherCat.Register(synccatalog.KindRule, "evidencia-de-pruebas", "1.0.0", rulePath, synccatalog.RegisterOptions{Origin: "local:rule"}); err != nil {
 			t.Fatalf("register rule other: %v", err)
 		}
-		if _, err := otherCat.Register(synccatalog.KindSkill, "revision-cambios", "1.0.0", skillDir, synccatalog.RegisterOptions{Origin: "local:skill"}); err != nil {
+		if _, err := otherCat.Register(synccatalog.KindSkill, "revision-cambios", "1.0.0", skillDir, synccatalog.RegisterOptions{
+			Origin:       "local:skill",
+			Dependencies: []synccatalog.Dependency{{Kind: synccatalog.KindRule, ID: "evidencia-de-pruebas", Version: "1.0.0"}},
+		}); err != nil {
 			t.Fatalf("register skill other: %v", err)
+		}
+		if _, err := otherCat.Register(synccatalog.KindPattern, "revision-por-pares", "1.0.0", patternPath, synccatalog.RegisterOptions{Origin: "local:pattern"}); err != nil {
+			t.Fatalf("register pattern other: %v", err)
 		}
 		v3, err := Preview(otherProj, otherCat, sel, profiles, nil)
 		if err != nil {
 			t.Fatalf("Preview v3: %v", err)
 		}
+		if !v3.Applicable() || v3.ID == "" {
+			t.Fatalf("expected applicable non-empty view for other project, got diags=%+v", v3.Diagnostics)
+		}
 		if v1.ID == v3.ID {
 			t.Fatalf("expected different view IDs across projects: %q", v1.ID)
+		}
+	})
+
+	t.Run("route_and_path_conflicts", func(t *testing.T) {
+		// 1) Windows drive-letter and backslash traversal paths in profiles must be rejected.
+		for _, badLoc := range []string{"C:/outside/AGENTS.md", "C:AGENTS.md", `..\outside`, "../outside"} {
+			badProfiles := []NativeProfile{
+				{
+					Target:        "codex",
+					Version:       "0.169.0",
+					OS:            "windows/amd64",
+					Trust:         "trusted",
+					SkillLocation: ".agents/skills",
+					RuleLocation:  badLoc,
+					Verified:      true,
+				},
+			}
+			singleSel := synccatalog.Selection{
+				Targets:    []string{"codex"},
+				Components: []synccatalog.ComponentRef{{Kind: synccatalog.KindRule, ID: "evidencia-de-pruebas", Version: "1.0.0"}},
+			}
+			v, err := Preview(proj, cat, singleSel, badProfiles, nil)
+			if err != nil {
+				t.Fatalf("unexpected error for bad location %q: %v", badLoc, err)
+			}
+			if v.Applicable() || len(v.Diagnostics) == 0 {
+				t.Fatalf("expected blocking diagnostic for unsafe location %q, got %+v", badLoc, v)
+			}
+		}
+
+		// 2) Path collision: skill file colliding with rules file path produces path_collision.
+		collidingProfiles := []NativeProfile{
+			{
+				Target:        "codex",
+				Version:       "0.169.0",
+				OS:            "windows/amd64",
+				Trust:         "trusted",
+				SkillLocation: ".agents/skills",
+				RuleLocation:  ".agents/skills/revision-cambios/SKILL.md",
+				Verified:      true,
+			},
+		}
+		collideSel := synccatalog.Selection{
+			Targets: []string{"codex"},
+			Components: []synccatalog.ComponentRef{
+				{Kind: synccatalog.KindSkill, ID: "revision-cambios", Version: "1.0.0"},
+				{Kind: synccatalog.KindRule, ID: "evidencia-de-pruebas", Version: "1.0.0"},
+			},
+		}
+		vc, err := Preview(proj, cat, collideSel, collidingProfiles, nil)
+		if err != nil {
+			t.Fatalf("unexpected error for path collision: %v", err)
+		}
+		if vc.Applicable() {
+			t.Fatalf("expected path_collision diagnostic, got applicable view")
+		}
+		foundCollision := false
+		for _, d := range vc.Diagnostics {
+			if d.Code == "path_collision" {
+				foundCollision = true
+			}
+		}
+		if !foundCollision {
+			t.Fatalf("expected path_collision diagnostic, got %+v", vc.Diagnostics)
 		}
 	})
 

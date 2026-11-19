@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -108,16 +109,17 @@ func (v View) Applicable() bool {
 	return len(v.Diagnostics) == 0 && v.ID != ""
 }
 
-// safeRelPath reports whether p is a clean, local, relative path without "..".
+// safeRelPath reports whether p is a clean, local, forward-slash relative path
+// without "..", backslashes, or Windows volume/drive prefixes.
 func safeRelPath(p string) bool {
-	if p == "" || p == "." || strings.HasPrefix(p, "/") || strings.HasPrefix(p, "\\") {
+	if p == "" || p == "." || strings.HasPrefix(p, "/") || strings.Contains(p, "\\") || strings.Contains(p, ":") {
 		return false
 	}
-	if path.Clean(p) != p {
+	if path.Clean(p) != p || !filepath.IsLocal(filepath.FromSlash(p)) {
 		return false
 	}
 	for _, seg := range strings.Split(p, "/") {
-		if seg == ".." {
+		if seg == "" || seg == "." || seg == ".." {
 			return false
 		}
 	}
@@ -335,6 +337,14 @@ func Preview(
 		pf := planned[p]
 		before, err := project.Observe(p)
 		if err != nil {
+			if errors.Is(err, syncfs.ErrUnsafePath) {
+				diags = append(diags, Diagnostic{
+					Code:    "unsafe_path",
+					Path:    p,
+					Message: "projected path is unsafe or escapes project root",
+				})
+				continue
+			}
 			return View{}, err
 		}
 		receipt, hasReceipt := receiptByPath[p]
@@ -378,7 +388,19 @@ func Preview(
 	}
 	if targetSet["codex"] {
 		if _, ok := planned["AGENTS.md"]; ok {
-			if st, err := project.Observe("AGENTS.override.md"); err == nil && st.Exists {
+			st, err := project.Observe("AGENTS.override.md")
+			if err != nil {
+				if errors.Is(err, syncfs.ErrUnsafePath) {
+					diags = append(diags, Diagnostic{
+						Code:    "unsafe_path",
+						Target:  "codex",
+						Path:    "AGENTS.override.md",
+						Message: "AGENTS.override.md is an unsafe path or symlink",
+					})
+				} else {
+					return View{}, err
+				}
+			} else if st.Exists {
 				diags = append(diags, Diagnostic{
 					Code:    "precedence_conflict",
 					Target:  "codex",
@@ -394,7 +416,19 @@ func Preview(
 				continue
 			}
 			p := path.Clean(".vibe/skills/" + e.ID + "/SKILL.md")
-			if st, err := project.Observe(p); err == nil && st.Exists {
+			st, err := project.Observe(p)
+			if err != nil {
+				if errors.Is(err, syncfs.ErrUnsafePath) {
+					diags = append(diags, Diagnostic{
+						Code:    "unsafe_path",
+						Target:  "vibe",
+						Path:    p,
+						Message: "existing .vibe skill path is unsafe or a symlink",
+					})
+				} else {
+					return View{}, err
+				}
+			} else if st.Exists {
 				diags = append(diags, Diagnostic{
 					Code:    "precedence_conflict",
 					Target:  "vibe",
