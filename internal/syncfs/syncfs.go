@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"unicode/utf16"
 	"unicode/utf8"
 )
 
@@ -172,7 +173,7 @@ func pathParts(path string) ([]string, error) {
 		// Keep DOS device stems invalid even on Windows versions that allow
 		// an extension after one of those names.
 		stem, _, _ := strings.Cut(part, ".")
-		if part == "" || strings.TrimRight(part, " .") != part ||
+		if part == "" || len(utf16.Encode([]rune(part))) > 255 || strings.TrimRight(part, " .") != part ||
 			stem != "" && !filepath.IsLocal(strings.TrimRight(stem, " ")) ||
 			strings.ContainsAny(part, ":*?\"<>|") ||
 			strings.ContainsFunc(part, func(r rune) bool { return r < 32 }) {

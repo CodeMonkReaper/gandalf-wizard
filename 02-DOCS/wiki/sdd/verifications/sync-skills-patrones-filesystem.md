@@ -9,7 +9,7 @@ topic: sdd
 
 # Escritura confinada y recuperación por archivo
 
-T002 verifica las primitivas de archivos que consumirá el escritor de Gandalf. La suite se ejecutó con Go 1.27.3 y Windows amd64 sobre NTFS local. [Plan técnico](../plans/sync-skills-patrones.md) · [Subissue #30](https://github.com/CodeMonkReaper/gandalf-wizard/issues/30)
+T002 ensaya las primitivas de archivos previstas para el escritor de Gandalf. Los casos ejecutados pasan. La revisión dejó T002 bloqueada para integración. La suite se ejecutó con Go 1.27.3 y Windows amd64 sobre NTFS local. [Plan técnico](../plans/sync-skills-patrones.md) · [Subissue #30](https://github.com/CodeMonkReaper/gandalf-wizard/issues/30)
 
 ## Reproducción
 
@@ -21,8 +21,8 @@ go test -count=1 -v ./internal/syncfs -run '^TestSyncFilesystem$'
 
 ## Resultados
 
-- Las rutas fuera de la raíz, los enlaces y los tipos de archivo no admitidos se rechazaron. La prueba conservó el contenido externo. Una regresión inicial permitió mover directorios intermedios abiertos con acceso solo a atributos. La corrección usa acceso de lectura al directorio y la prueba comprueba que el anclaje impide moverlos durante la operación.
-- Una huella obsoleta o un cambio de identidad bloqueó la escritura. Reemplazar con contenido equivalente dejó intacto el archivo. Un destino con permisos distintos del temporal rechazó la actualización.
+- Las rutas fuera de la raíz, los enlaces, los componentes de más de 255 unidades UTF-16 y los tipos de archivo no admitidos se rechazaron. La prueba conservó el contenido externo. Una regresión inicial permitió mover directorios intermedios abiertos con acceso solo a atributos. La corrección usa acceso de lectura al directorio y la prueba comprueba que el anclaje impide moverlos durante la operación.
+- Una huella obsoleta o un cambio de identidad bloqueó la escritura. Reemplazar con contenido equivalente dejó intacto el archivo. Un destino con permisos distintos del temporal rechazó la actualización. Un archivo con un flujo NTFS adicional conservó el contenido principal y el flujo auxiliar tras el rechazo.
 - Un proceso independiente recibió el estado ocupado mientras había un escritor. Tras terminar por la fuerza al titular, otro proceso obtuvo la exclusión. Adquirir y soltar la exclusión dejó intacto el directorio.
 - Terminar el proceso antes del reemplazo dejó los bytes previos y eliminó el archivo temporal de ese ensayo. Terminarlo después dejó los bytes previstos. En ambos casos se pudo restablecer el contenido anterior.
 

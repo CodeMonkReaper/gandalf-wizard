@@ -119,6 +119,10 @@ func openFile(parent syscall.Handle, name string, access, share uint32) (*os.Fil
 		_ = syscall.CloseHandle(handle)
 		return nil, "", err
 	}
+	if err := requireDefaultStream(handle); err != nil {
+		_ = syscall.CloseHandle(handle)
+		return nil, "", err
+	}
 	return os.NewFile(uintptr(handle), name), fileID(info), nil
 }
 

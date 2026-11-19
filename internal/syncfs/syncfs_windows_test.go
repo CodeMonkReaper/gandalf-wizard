@@ -22,6 +22,7 @@ func TestSyncFilesystem(t *testing.T) {
 	t.Run("rutas y enlaces", testConfinement)
 	t.Run("estados y precondiciones", testFileStates)
 	t.Run("ACL de un destino existente", testDestinationACL)
+	t.Run("flujos adicionales del destino", testNamedStreams)
 	t.Run("identidad y anclaje de la raiz", testProjectIdentity)
 	t.Run("anclaje de directorios intermedios", testParentPins)
 	t.Run("exclusion sin archivos de bloqueo", testExclusiveProcess)
@@ -60,7 +61,8 @@ func testConfinement(t *testing.T) {
 		"nested//rules.txt", "nested/rules.txt.", "nested/rules.txt ", "NUL.txt", "nested/rules.txt:alternate",
 		"C:rules.txt", "\\rules.txt", filepath.Join(outside, targetName),
 		"outside-junction/" + targetName, "inside-junction/" + targetName, "outside-junction",
-		"hard-link.txt", "second-link.txt", targetName, "nested", "hard-link.txt/child"}
+		"hard-link.txt", "second-link.txt", targetName, "nested", "hard-link.txt/child",
+		"absent/" + strings.Repeat("x", 256), "absent/" + strings.Repeat("界", 256) + "/child.txt"}
 	for _, path := range paths {
 		if _, err := project.Observe(path); !errors.Is(err, ErrUnsafePath) {
 			t.Errorf("Observe(%q): got %v, want ErrUnsafePath", path, err)
@@ -480,4 +482,22 @@ func assertChange(t *testing.T, p *ScopedProject, lease *Lease, path string, exp
 	if changed, err := p.Change(lease, path, expected, desired); changed != want || err != nil {
 		t.Fatalf("change: got changed=%v, err=%v, want changed=%v", changed, err, want)
 	}
+}
+
+func testNamedStreams(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, targetName)
+	writeFixture(t, path, "main")
+	project := openFixture(t, root)
+	lease := acquireFixture(t, project)
+	expected := observeFixture(t, project, targetName)
+	writeFixture(t, path+":gandalf-metadata", "metadata")
+	if _, err := project.Observe(targetName); !errors.Is(err, ErrUnsafePath) {
+		t.Fatalf("Observe with named stream: got %v, want ErrUnsafePath", err)
+	}
+	if changed, err := project.Change(lease, targetName, expected, NewFileState([]byte("replacement"))); changed || !errors.Is(err, ErrUnsafePath) {
+		t.Fatalf("Change with named stream: got changed=%v, err=%v", changed, err)
+	}
+	checkContents(t, path, "main")
+	checkContents(t, path+":gandalf-metadata", "metadata")
 }

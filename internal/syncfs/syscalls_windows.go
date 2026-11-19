@@ -48,6 +48,7 @@ var (
 	releaseMutex         = kernel32.NewProc("ReleaseMutex")
 	finalPathByHandle    = kernel32.NewProc("GetFinalPathNameByHandleW")
 	volumeInfoByHandle   = kernel32.NewProc("GetVolumeInformationByHandleW")
+	fileInfoByHandle     = kernel32.NewProc("GetFileInformationByHandleEx")
 	getKernelSecurity    = advapi32.NewProc("GetKernelObjectSecurity")
 	ntCreateFile         = ntdll.NewProc("NtCreateFile")
 	ntSetInformationFile = ntdll.NewProc("NtSetInformationFile")
@@ -155,6 +156,33 @@ func inspectHandle(handle syscall.Handle, directory bool) (syscall.ByHandleFileI
 		return info, ErrUnsafePath
 	}
 	return info, nil
+}
+
+func requireDefaultStream(handle syscall.Handle) error {
+	const fileStreamInfo = 7
+	const moreData = syscall.Errno(234)
+	// FILE_STREAM_INFO begins with the next record offset. The default
+	// data stream fits in this buffer. Additional streams are unsupported.
+	var stream struct {
+		nextOffset uint32
+		nameLength uint32
+		size       int64
+		allocation int64
+		name       [256]uint16
+	}
+	ok, _, err := fileInfoByHandle.Call(uintptr(handle), fileStreamInfo,
+		uintptr(unsafe.Pointer(&stream)), unsafe.Sizeof(stream))
+	if ok == 0 {
+		if errors.Is(err, moreData) {
+			return ErrUnsafePath
+		}
+		return fmt.Errorf("inspect file streams: %w", err)
+	}
+	if stream.nextOffset != 0 || stream.nameLength != 14 ||
+		syscall.UTF16ToString(stream.name[:7]) != "::$DATA" {
+		return ErrUnsafePath
+	}
+	return nil
 }
 
 func fileID(info syscall.ByHandleFileInformation) string {
