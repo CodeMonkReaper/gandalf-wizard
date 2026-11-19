@@ -111,11 +111,38 @@ func TestSyncApply(t *testing.T) {
 		if err != nil || !view.Applicable() {
 			t.Fatalf("Preview: err=%v", err)
 		}
-		res, err := Apply(proj, cat, sel, profiles, view.ID, ApplyOptions{})
+		const fixedOpID = "op-t005-verify"
+		checkedBeforeFirstWrite := false
+		res, err := Apply(proj, cat, sel, profiles, view.ID, ApplyOptions{
+			OperationID: fixedOpID,
+			BeforeWrite: func(p string) error {
+				if checkedBeforeFirstWrite {
+					return nil
+				}
+				checkedBeforeFirstWrite = true
+				// Before the first target write: .gitignore, pending.json, operation.json, and AGENTS.md backup must already exist.
+				if _, err := os.Stat(filepath.Join(root, ".gandalf", "sync", ".gitignore")); err != nil {
+					t.Errorf(".gitignore missing before first write: %v", err)
+				}
+				if _, err := os.Stat(filepath.Join(root, ".gandalf", "sync", "pending.json")); err != nil {
+					t.Errorf("pending.json missing before first write: %v", err)
+				}
+				if _, err := os.Stat(filepath.Join(root, ".gandalf", "sync", "operations", fixedOpID, "operation.json")); err != nil {
+					t.Errorf("operation.json missing before first write: %v", err)
+				}
+				if _, err := os.Stat(filepath.Join(root, ".agents")); !os.IsNotExist(err) {
+					t.Errorf(".agents already exists before first target write")
+				}
+				return nil
+			},
+		})
 		if err != nil {
 			t.Fatalf("Apply: %v", err)
 		}
-		if res.Status != StatusApplied || res.OperationID == "" || len(res.Changes) != 3 {
+		if !checkedBeforeFirstWrite {
+			t.Fatalf("BeforeWrite hook was never invoked")
+		}
+		if res.Status != StatusApplied || res.OperationID != fixedOpID || len(res.Changes) != 3 {
 			t.Fatalf("unexpected ApplyResult: %+v", res)
 		}
 		// AC-08: JSON output must not contain secretMarker.
@@ -123,26 +150,72 @@ func TestSyncApply(t *testing.T) {
 		if strings.Contains(string(rawJSON), secretMarker) {
 			t.Fatalf("ApplyResult JSON leaked file content")
 		}
-		// Git exclusion for private sync state.
+		// Git exclusion and owner-only ACL for private sync state.
 		gi, err := os.ReadFile(filepath.Join(root, ".gandalf", "sync", ".gitignore"))
 		if err != nil || !strings.Contains(string(gi), "*") {
 			t.Fatalf("expected .gandalf/sync/.gitignore excluding state, err=%v content=%q", err, string(gi))
 		}
+		assertOwnerOnlyACL(t, filepath.Join(root, ".gandalf", "sync"), true)
 		// Foreign bytes preserved in AGENTS.md.
 		gotAgents, err := os.ReadFile(filepath.Join(root, "AGENTS.md"))
 		if err != nil || !strings.Contains(string(gotAgents), foreignAgents) || !strings.Contains(string(gotAgents), BlockStart) {
 			t.Fatalf("AGENTS.md missing foreign bytes or managed block")
 		}
-		// Operation & backup persisted.
+		// Operation & backup persisted with exact pre-apply bytes and restricted ACL.
 		op, err := LoadOperation(proj, res.OperationID)
 		if err != nil || op.Phase != PhaseApplied || len(op.Entries) != 3 {
 			t.Fatalf("unexpected operation: err=%v op=%+v", err, op)
 		}
-		// Second preview with loaded receipts has 0 changes; applying it is noop with no operation created.
+		var agentsBackup string
+		for _, entry := range op.Entries {
+			if entry.Path == "AGENTS.md" {
+				if !entry.BeforeExists || entry.BackupPath == "" {
+					t.Fatalf("expected AGENTS.md entry with BeforeExists and BackupPath, got %+v", entry)
+				}
+				agentsBackup = filepath.Join(root, filepath.FromSlash(entry.BackupPath))
+				bakBytes, err := os.ReadFile(agentsBackup)
+				if err != nil || string(bakBytes) != foreignAgents {
+					t.Fatalf("backup mismatch for AGENTS.md: err=%v got=%q", err, string(bakBytes))
+				}
+				assertOwnerOnlyACL(t, agentsBackup, false)
+			} else {
+				if entry.BeforeExists || entry.BackupPath != "" {
+					t.Fatalf("expected created entry %s to have BeforeExists=false and empty BackupPath, got %+v", entry.Path, entry)
+				}
+			}
+		}
+		if agentsBackup == "" {
+			t.Fatalf("AGENTS.md entry missing from operation")
+		}
+		// Reusing an existing OperationID must fail with conflict and preserve the prior backup.
+		rule2Path := filepath.Join(sourceRoot, "evidencia-v2.md")
+		if err := os.WriteFile(rule2Path, []byte("Indicar pruebas v2.\n"), 0o644); err != nil {
+			t.Fatalf("write rule v2: %v", err)
+		}
+		if _, err := cat.Register(synccatalog.KindRule, "evidencia-de-pruebas", "2.0.0", rule2Path, synccatalog.RegisterOptions{Origin: "local:rule-v2"}); err != nil {
+			t.Fatalf("register rule v2: %v", err)
+		}
 		receipts, err := LoadReceipts(proj)
 		if err != nil || len(receipts) != 3 {
 			t.Fatalf("LoadReceipts: err=%v receipts=%+v", err, receipts)
 		}
+		selV2 := synccatalog.Selection{
+			Targets:    []string{"codex", "vibe"},
+			Components: []synccatalog.ComponentRef{{Kind: synccatalog.KindRule, ID: "evidencia-de-pruebas", Version: "2.0.0"}},
+		}
+		vRule2, err := Preview(proj, cat, selV2, profiles, receipts)
+		if err != nil || !vRule2.Applicable() {
+			t.Fatalf("Preview vRule2: err=%v view=%+v", err, vRule2)
+		}
+		dupRes, err := Apply(proj, cat, selV2, profiles, vRule2.ID, ApplyOptions{OperationID: fixedOpID})
+		if !errors.Is(err, syncfs.ErrConflict) || dupRes.Status != StatusConflict {
+			t.Fatalf("expected ErrConflict on reused OperationID, got err=%v res=%+v", err, dupRes)
+		}
+		bakAfterDup, err := os.ReadFile(agentsBackup)
+		if err != nil || string(bakAfterDup) != foreignAgents {
+			t.Fatalf("reused OperationID overwrote prior backup: err=%v", err)
+		}
+		// Second preview with loaded receipts has 0 changes; applying it is noop with no operation created.
 		v2, err := Preview(proj, cat, sel, profiles, receipts)
 		if err != nil || !v2.Applicable() || len(v2.Changes) != 0 {
 			t.Fatalf("expected 0-change second preview, err=%v v2=%+v", err, v2)

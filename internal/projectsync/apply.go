@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 	"regexp"
 	"sort"
 	"strings"
@@ -363,6 +362,25 @@ func Apply(
 		}, ErrRecoveryPending
 	}
 
+	existingOp, err := project.Observe(operationPath(opID))
+	if err != nil {
+		return ApplyResult{
+			Status:    StatusRejected,
+			Reason:    err.Error(),
+			ProjectID: projectID,
+			ViewID:    viewID,
+		}, err
+	}
+	if existingOp.Exists {
+		return ApplyResult{
+			Status:      StatusConflict,
+			Reason:      "operation id already exists",
+			ProjectID:   projectID,
+			ViewID:      viewID,
+			OperationID: opID,
+		}, fmt.Errorf("%w: operation %q already exists", syncfs.ErrConflict, opID)
+	}
+
 	receipts, err := LoadReceipts(project)
 	if err != nil {
 		return ApplyResult{
@@ -466,27 +484,39 @@ func Apply(
 		}, cause
 	}
 
-	// Persist intent before the first target write: git exclusion, backups, journal, pending marker.
+	rejectPreWrite := func(reason string, cause error) (ApplyResult, error) {
+		return ApplyResult{
+			Status:    StatusRejected,
+			Reason:    reason,
+			ProjectID: projectID,
+			ViewID:    view.ID,
+		}, cause
+	}
+
+	// Persist intent before the first target write: owner-only ACL, git exclusion, backups, journal, pending marker.
+	if err := project.RestrictDir(lease, StateDir); err != nil {
+		return rejectPreWrite("cannot restrict sync state directory", err)
+	}
 	if err := writeStateFile(project, lease, stateGitignore, []byte(stateGitignoreIn)); err != nil {
-		return recoveryResult("cannot persist state gitignore", err)
+		return rejectPreWrite("cannot persist state gitignore", err)
 	}
 	for i, ch := range view.Changes {
 		if !ch.Before.Exists {
 			continue
 		}
 		if err := writeStateFile(project, lease, backupPath(opID, i), ch.Before.Bytes); err != nil {
-			return recoveryResult("cannot persist backup", err)
+			return rejectPreWrite("cannot persist backup", err)
 		}
 	}
 	if err := persistOperation(project, lease, op); err != nil {
-		return recoveryResult("cannot persist operation journal", err)
+		return rejectPreWrite("cannot persist operation journal", err)
 	}
 	marker, err := json.Marshal(pendingMarker{OperationID: opID})
 	if err != nil {
-		return recoveryResult("cannot encode pending marker", err)
+		return rejectPreWrite("cannot encode pending marker", err)
 	}
 	if err := writeStateFile(project, lease, pendingPath, append(marker, '\n')); err != nil {
-		return recoveryResult("cannot persist pending marker", err)
+		return rejectPreWrite("cannot persist pending marker", err)
 	}
 
 	for i, ch := range view.Changes {
@@ -533,6 +563,3 @@ func Apply(
 		Changes:     summaries,
 	}, nil
 }
-
-// ensure path import is used for deterministic state path joins in future recovery code.
-var _ = path.Join

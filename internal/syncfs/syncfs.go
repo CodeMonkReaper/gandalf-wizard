@@ -187,6 +187,25 @@ func (p *ScopedProject) Change(lease *Lease, path string, expected, desired File
 	return p.files.change(parts, expected, desired, lease.operation)
 }
 
+// RestrictDir ensures the confined directory exists and applies platform
+// owner-only access restrictions (on Windows, a protected DACL for the current
+// user with object/container inheritance).
+func (p *ScopedProject) RestrictDir(lease *Lease, path string) error {
+	parts, err := pathParts(path)
+	if err != nil {
+		return err
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.files == nil {
+		return fs.ErrClosed
+	}
+	if lease == nil || p.writer != lease {
+		return ErrInvalidLease
+	}
+	return p.files.restrictDir(parts)
+}
+
 func pathParts(path string) ([]string, error) {
 	if !utf8.ValidString(path) || !filepath.IsLocal(path) {
 		return nil, ErrUnsafePath
