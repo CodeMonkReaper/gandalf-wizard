@@ -156,3 +156,18 @@ slug: sync-skills-patrones
   - **Estado**: completo. Nivel de revisión 1 (`rsc risk --base 06760bf --json`: tier 1, 1 revisor, sin aprobación humana).
   - **Revisión**: ronda 1 (`05776ce`, revisor en contexto fresco) → 3 hallazgos (`L24`–`L26`: 1 blocker recibos al restaurar actualizaciones de skill, 2 should-fix `pending.json` de otra operación y orden `persistReceipts` antes de `EntryRestored`; `changes-needed`). Todos corregidos en `31b8c71` (con 2 subpruebas de regresión nuevas) y marcados `fixed` en el ledger. Ronda 2 (`31b8c71`, revisor en contexto fresco) → `VERDICT: pass` (0 hallazgos).
   - **Controles ejecutados**: `gofmt -l internal/projectsync` (limpio), `go vet ./...` (ok), `go build ./...` (ok), compilación cruzada `GOOS=linux GOARCH=amd64 go build ./...` (ok), `go test -count=1 -v ./internal/projectsync -run '^TestSyncRestore$'` (7/7 PASS), `go test -count=1 ./...` (15/15 paquetes en verde). Trazabilidad AC-05, AC-06, AC-07.
+
+## T007 · 2026-11-19
+
+- **Tarea / Issue**: T007 / [#35](https://github.com/CodeMonkReaper/gandalf-wizard/issues/35) — integrar `catalog register`, `catalog list`, `sync preview`, `sync apply` y `sync restore` en `internal/cli`.
+- **Estado previo (RED)**: el coordinador conectó `catalog` y `sync` en [run.go](../../../../internal/cli/run.go), creó el stub [sync.go](../../../../internal/cli/sync.go) y el test inicial [sync_test.go](../../../../internal/cli/sync_test.go). Ejecutó `go test -count=1 -v ./internal/cli -run '^TestSyncCLI$'` y confirmó el fallo esperado (`not implemented`).
+- **Delegación a Vibe (intento 1)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t007-cli` · tier `balanced` (perfil `developer`) · solicitado/efectivo `deepseek-v4-1-flash-1017`.
+  - **Run ID / Estado**: `5c67e9d5-8770-4268-a1a7-d270fb6c18a6` · `DONE_WITH_CONCERNS` (exit 0, 22.7 s; worker sin shell).
+  - **Trabajo realizado por Vibe**: implementó [sync.go](../../../../internal/cli/sync.go) completo y añadió 2 subpruebas en [sync_test.go](../../../../internal/cli/sync_test.go).
+  - **Verificación y ajustes del coordinador**: ajustó la extracción de `operation_id` en el subtest de salida en texto (`8755746`).
+- **Cierre y revisión de T007**:
+  - **Estado**: completo. Nivel de revisión 1 (`rsc risk --base 8d4a467 --json`: tier 1, 1 revisor, sin aprobación humana).
+  - **Revisión**: ronda 1 (`8755746`, revisor en contexto fresco) → 1 hallazgo `should-fix` (`L27`: preservar `view_id`, `operation_id`, `changes` y `diagnostics` en salidas de error JSON de `apply`/`restore`; `changes-needed`). Corregido con subtest de regresión en `79dc165` y marcado `fixed` en el ledger. Ronda 2 (`79dc165`, revisor en contexto fresco) → `VERDICT: pass` (0 hallazgos).
+  - **Controles ejecutados**: `gofmt -l internal/cli/run.go internal/cli/sync.go internal/cli/sync_test.go` (limpio), `go vet ./...` (ok), `go build ./...` (ok), compilación cruzada `GOOS=linux GOARCH=amd64 go build ./...` (ok), `go test -count=1 -v ./internal/cli -run '^TestSyncCLI$'` (5/5 PASS), `go test -count=1 ./...` (15/15 paquetes en verde). Trazabilidad AC-01, AC-02, AC-04, AC-06, AC-08, AC-09.
