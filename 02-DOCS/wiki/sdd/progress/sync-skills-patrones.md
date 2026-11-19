@@ -32,6 +32,16 @@ slug: sync-skills-patrones
 - Ronda 1 identificó cuatro hallazgos. Dos se corrigieron con pruebas. Los otros dos afectan la publicación condicionada a la identidad verificada y la trazabilidad de temporales que pueden sobrevivir.
 - El plan aprobado separa la primitiva de archivos de la recuperación completa. La alternativa en evaluación acopla ese tramo al registro de operaciones para identificar temporales antes de publicar. El reemplazo necesita un protocolo que preserve una edición externa concurrente. [Evidencia de Windows](../verifications/sync-skills-patrones-filesystem.md)
 
+
+## T002 · cierre · 2026-11-19
+
+- Estado completo. Nivel de revisión 1 (`rsc risk --base 6ca99cb`: tier 1, 1 revisor, sin aprobación humana).
+- Q1 y Q2 decididos por el propietario (precondición de identidad; acoplamiento al registro de operaciones) y registrados en [decisions.md](../decisions.md). Implementación en `53de71b` (lease con operación, temporales `.gandalf-sync-<op>-<id>.tmp`, guard de identidad) y `c525306` (publicación sin reemplazo: el enlace verificado se elimina por handle con semántica POSIX y el renombrado no usa bandera de reemplazo).
+- red: `precondicion_de_identidad_antes_de_publicar/reemplazo_tras_la_verificacion` devolvía `changed=true` sobrescribiendo la edición externa; `TryExclusive("")` se aceptaba. green: `go test -count=1 -v ./internal/syncfs -run '^TestSyncFilesystem$'` pasa con los seams antes y después de la verificación, el modo `armed` (proceso pausado dentro de `Change` tras `keepStagedFile`) y exclusión con ids de operación distintos.
+- revisión: ronda 1 (4 hallazgos, 2 corregidos) → ronda 2 (3 hallazgos: L6 blocker TOCTOU, L7/L8 cobertura; veredicto changes-needed) → ronda 3 (veredicto pass, 0 hallazgos, revisor Antigravity en contexto fresco). L6–L8 registrados como `fixed`. La advertencia del ledger sobre AC-07 (objeciones distintas en rondas 1 y 2) quedó atendida con las pruebas de interrupción reforzadas de la ronda 3.
+- controles: `go test -count=1 ./...` en verde (13 paquetes), `go vet ./...`, `go build ./...`, compilación cruzada Linux amd64 y `gofmt -l internal/syncfs` limpio. Trazabilidad AC-05, AC-06, AC-07.
+- decisión: Q1 y Q2 cerrados en la cola de decisiones (ver arriba). El plan se enmendó con la interfaz `TryExclusive(operation)` y la publicación sin reemplazo.
+
 ## Controles del lote
 
 - La suite `go test -count=1 ./...` pasó en los 13 paquetes con el ensayo nativo habilitado.
@@ -41,5 +51,5 @@ slug: sync-skills-patrones
 
 ## Decision queue
 
-- [blocking] Q1 — T002, proteger un archivo que otro programa reemplaza entre la comprobación y la publicación. El plan revisado debe demostrar publicación sin sobrescritura de una entrada nueva o una precondición de identidad equivalente. Casos AC-05 y AC-07.
-- [blocking] Q2 — T002, atribuir los temporales a una operación antes de que puedan sobrevivir al proceso. Coordinar la interfaz de escritura con el registro de T005 y probar interrupciones en ese punto. Caso AC-07.
+- [closed 2026-11-19, propietario] Q1 — T002, proteger un archivo que otro programa reemplaza entre la comprobación y la publicación. Decisión: precondición de identidad — reverificar junto al reemplazo, eliminar el enlace verificado por handle y publicar sin reemplazo; ante identidad distinta, `ErrConflict` conservando la edición externa. Casos AC-05 y AC-07. Implementado en `c525306`.
+- [closed 2026-11-19, propietario] Q2 — T002, atribuir los temporales a una operación antes de que puedan sobrevivir al proceso. Decisión: el lease lleva el identificador de operación (`TryExclusive(operation)`) y los temporales se nombran `.gandalf-sync-<operación>-<id>.tmp`. Implementado en `53de71b` y probado desde `Change` en `c525306`. Caso AC-07.
