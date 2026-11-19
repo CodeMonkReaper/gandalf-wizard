@@ -159,7 +159,7 @@ func (f *projectFS) observe(parts []string) (FileState, error) {
 	return readState(file, id)
 }
 
-func (f *projectFS) change(parts []string, expected, desired FileState) (changed bool, err error) {
+func (f *projectFS) change(parts []string, expected, desired FileState, operation string) (changed bool, err error) {
 	parent, release, err := f.pinParent(parts, desired.Exists && !expected.Exists)
 	if errors.Is(err, os.ErrNotExist) && !expected.Exists && !desired.Exists {
 		return false, nil
@@ -203,7 +203,7 @@ func (f *projectFS) change(parts []string, expected, desired FileState) (changed
 		return false, nil
 	}
 
-	stage, err := prepareReplacement(parent, file, desired.Bytes)
+	stage, err := prepareReplacement(parent, file, operation, desired.Bytes)
 	if err != nil {
 		return false, err
 	}
@@ -245,20 +245,41 @@ func (f *projectFS) change(parts []string, expected, desired FileState) (changed
 		}
 		file = nil
 	}
-	// Existing names can be changed by a non-cooperating editor in the
-	// interval after closing the original handle and before the rename.
+	if current.Exists {
+		// Existing names can be changed by a non-cooperating editor in the
+		// interval after closing the original handle and before the rename.
+		// The identity precondition rechecks the name and holds a handle
+		// with delete sharing through the rename, so a foreign identity
+		// stops the change instead of being overwritten.
+		if testSeamBeforePublication != nil {
+			testSeamBeforePublication()
+		}
+		guard, guardID, err := openFile(parent, name, syscall.GENERIC_READ, shareReadDelete)
+		if err != nil {
+			return false, changeError(err)
+		}
+		defer guard.Close()
+		if guardID != current.FileID {
+			return false, ErrConflict
+		}
+	}
 	if err := renameHandle(stageHandle, parent, name, current.Exists); err != nil {
 		return false, changeError(err)
 	}
 	return true, nil
 }
 
-func prepareReplacement(parent syscall.Handle, current *os.File, data []byte) (*os.File, error) {
+// testSeamBeforePublication lets tests replace or remove the target in the
+// interval between closing the original handle and the identity recheck.
+// It stays nil outside tests.
+var testSeamBeforePublication func()
+
+func prepareReplacement(parent syscall.Handle, current *os.File, operation string, data []byte) (*os.File, error) {
 	random := make([]byte, 16)
 	if _, err := rand.Read(random); err != nil {
 		return nil, err
 	}
-	name := ".gandalf-sync-" + hex.EncodeToString(random) + ".tmp"
+	name := ".gandalf-sync-" + operation + "-" + hex.EncodeToString(random) + ".tmp"
 	handle, err := openAt(parent, name, syscall.GENERIC_READ|syscall.GENERIC_WRITE|deleteAccess,
 		shareRead, fileCreate, nonDirectoryFile|deleteOnClose)
 	if err != nil {

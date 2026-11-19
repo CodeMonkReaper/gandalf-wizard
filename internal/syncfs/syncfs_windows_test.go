@@ -27,6 +27,8 @@ func TestSyncFilesystem(t *testing.T) {
 	t.Run("anclaje de directorios intermedios", testParentPins)
 	t.Run("exclusion sin archivos de bloqueo", testExclusiveProcess)
 	t.Run("terminacion antes y despues del reemplazo", testInterruptedProcess)
+	t.Run("precondicion de identidad antes de publicar", testPublicationGuard)
+	t.Run("lease de operacion", testOperationLease)
 }
 
 func testConfinement(t *testing.T) {
@@ -203,7 +205,7 @@ func testProjectIdentity(t *testing.T) {
 	lease := acquireFixture(t, project)
 	acquireFixture(t, unrelated)
 	for _, handle := range []*ScopedProject{project, second} {
-		if _, err := handle.TryExclusive(); !errors.Is(err, ErrBusy) {
+		if _, err := handle.TryExclusive("fixture"); !errors.Is(err, ErrBusy) {
 			t.Fatalf("a second acquisition in one process returned %v, want ErrBusy", err)
 		}
 	}
@@ -299,6 +301,13 @@ func testInterruptedProcess(t *testing.T) {
 			want := 1
 			if point.mode == "before" {
 				want = 2
+				attributed := false
+				for _, entry := range entries {
+					attributed = attributed || strings.HasPrefix(entry.Name(), ".gandalf-sync-fixture-")
+				}
+				if !attributed {
+					t.Fatalf("surviving stage is not attributable to the operation: %v", entries)
+				}
 			}
 			if len(entries) != want {
 				t.Fatalf("expected %d project files at %s replacement, got %v", want, point.mode, entries)
@@ -327,7 +336,7 @@ func TestSyncFilesystemProcess(t *testing.T) {
 	}
 	project := openFixture(t, os.Getenv("GANDALF_SYNCFS_TEST_ROOT"))
 	if mode == "busy" {
-		if _, err := project.TryExclusive(); !errors.Is(err, ErrBusy) {
+		if _, err := project.TryExclusive("fixture"); !errors.Is(err, ErrBusy) {
 			t.Fatalf("competitor got %v, want ErrBusy", err)
 		}
 		return
@@ -337,7 +346,7 @@ func TestSyncFilesystemProcess(t *testing.T) {
 	case "free":
 		return
 	case "before":
-		staged, err := stageFixture(project, NewFileState([]byte("after")))
+		staged, err := stageFixture(project, lease.operation, NewFileState([]byte("after")))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -441,7 +450,7 @@ func openFixture(t *testing.T, root string) *ScopedProject {
 
 func acquireFixture(t *testing.T, project *ScopedProject) *Lease {
 	t.Helper()
-	lease, err := project.TryExclusive()
+	lease, err := project.TryExclusive("fixture")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -482,6 +491,72 @@ func assertChange(t *testing.T, p *ScopedProject, lease *Lease, path string, exp
 	if changed, err := p.Change(lease, path, expected, desired); changed != want || err != nil {
 		t.Fatalf("change: got changed=%v, err=%v, want changed=%v", changed, err, want)
 	}
+}
+
+func testPublicationGuard(t *testing.T) {
+	for _, seam := range []struct {
+		name  string
+		apply func(root string)
+	}{
+		{"reemplazo externo", func(root string) {
+			name := filepath.Join(root, targetName)
+			if err := os.Remove(name); err != nil {
+				t.Errorf("seam could not remove the target: %v", err)
+			}
+			writeFixture(t, name, "external")
+		}},
+		{"nombre eliminado", func(root string) {
+			if err := os.Remove(filepath.Join(root, targetName)); err != nil {
+				t.Errorf("seam could not remove the target: %v", err)
+			}
+		}},
+	} {
+		t.Run(seam.name, func(t *testing.T) {
+			root := t.TempDir()
+			writeFixture(t, filepath.Join(root, targetName), "before")
+			project := openFixture(t, root)
+			lease := acquireFixture(t, project)
+			expected := observeFixture(t, project, targetName)
+			after := NewFileState([]byte("after"))
+			testSeamBeforePublication = func() { seam.apply(root) }
+			defer func() { testSeamBeforePublication = nil }()
+			if changed, err := project.Change(lease, targetName, expected, after); changed || !errors.Is(err, ErrConflict) {
+				t.Fatalf("target changed before publication: got changed=%v, err=%v, want ErrConflict", changed, err)
+			}
+			if seam.name == "reemplazo externo" {
+				checkContents(t, filepath.Join(root, targetName), "external")
+			}
+			entries, err := os.ReadDir(root)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, entry := range entries {
+				if strings.HasPrefix(entry.Name(), ".gandalf-sync-") {
+					t.Fatalf("guard left a stage file: %v", entries)
+				}
+			}
+		})
+	}
+}
+
+func testOperationLease(t *testing.T) {
+	root := t.TempDir()
+	project := openFixture(t, root)
+	for _, operation := range []string{"", "op/x", "op x", strings.Repeat("x", 65), "op\n"} {
+		lease, err := project.TryExclusive(operation)
+		if err == nil {
+			_ = lease.Close()
+			t.Fatalf("TryExclusive(%q) succeeded, want ErrInvalidOperation", operation)
+		}
+		if !errors.Is(err, ErrInvalidOperation) {
+			t.Fatalf("TryExclusive(%q): got %v, want ErrInvalidOperation", operation, err)
+		}
+	}
+	lease := acquireFixture(t, project)
+	if _, err := project.TryExclusive("fixture"); !errors.Is(err, ErrBusy) {
+		t.Fatalf("a second acquisition returned %v, want ErrBusy", err)
+	}
+	assertChange(t, project, lease, targetName, FileState{}, NewFileState([]byte("op")), true)
 }
 
 func testNamedStreams(t *testing.T) {

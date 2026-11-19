@@ -8,6 +8,6 @@ func openProjectFS(string) (*projectFS, string, error) { return nil, "", ErrUnsu
 func takeWriter(string) (func() error, error)          { return nil, ErrUnsupported }
 func (*projectFS) close() error                        { return ErrUnsupported }
 func (*projectFS) observe([]string) (FileState, error) { return FileState{}, ErrUnsupported }
-func (*projectFS) change([]string, FileState, FileState) (bool, error) {
+func (*projectFS) change([]string, FileState, FileState, string) (bool, error) {
 	return false, ErrUnsupported
 }

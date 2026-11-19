@@ -21,6 +21,9 @@ var (
 	ErrConflict     = errors.New("file state conflicts with the expected change")
 	ErrInvalidLease = errors.New("invalid project writer lease")
 	ErrUnsupported  = errors.New("project filesystem is unsupported")
+	// ErrInvalidOperation rejects an operation identifier that cannot name a
+	// staged file of the project.
+	ErrInvalidOperation = errors.New("invalid operation identifier")
 )
 
 // FileState is a regular file snapshot. The zero value denotes absence.
@@ -102,12 +105,15 @@ func (p *ScopedProject) Observe(path string) (FileState, error) {
 
 // Lease authorizes a single project writer until it closes or the process exits.
 type Lease struct {
-	project *ScopedProject
-	release func() error
+	project   *ScopedProject
+	release   func() error
+	operation string
 }
 
 // TryExclusive acquires the project writer lease immediately or returns ErrBusy.
-func (p *ScopedProject) TryExclusive() (*Lease, error) {
+// The operation identifier names the staged files of the caller's operation so
+// a later recovery can attribute them.
+func (p *ScopedProject) TryExclusive(operation string) (*Lease, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.files == nil {
@@ -116,12 +122,29 @@ func (p *ScopedProject) TryExclusive() (*Lease, error) {
 	if p.writer != nil {
 		return nil, ErrBusy
 	}
+	if !validOperation(operation) {
+		return nil, ErrInvalidOperation
+	}
 	release, err := takeWriter(p.id)
 	if err != nil {
 		return nil, err
 	}
-	p.writer = &Lease{project: p, release: release}
+	p.writer = &Lease{project: p, release: release, operation: operation}
 	return p.writer, nil
+}
+
+func validOperation(operation string) bool {
+	if operation == "" || len(operation) > 64 {
+		return false
+	}
+	for _, r := range operation {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '.', r == '_', r == '-':
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 // Close releases the writer lease. Multiple calls are safe.
@@ -161,7 +184,7 @@ func (p *ScopedProject) Change(lease *Lease, path string, expected, desired File
 		}
 		desired.SHA256 = digest
 	}
-	return p.files.change(parts, expected, desired)
+	return p.files.change(parts, expected, desired, lease.operation)
 }
 
 func pathParts(path string) ([]string, error) {
