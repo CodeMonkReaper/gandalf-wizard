@@ -27,6 +27,7 @@ func TestSyncFilesystem(t *testing.T) {
 	t.Run("anclaje de directorios intermedios", testParentPins)
 	t.Run("exclusion sin archivos de bloqueo", testExclusiveProcess)
 	t.Run("terminacion antes y despues del reemplazo", testInterruptedProcess)
+	t.Run("interrupcion con temporal armado", testInterruptedArmed)
 	t.Run("precondicion de identidad antes de publicar", testPublicationGuard)
 	t.Run("lease de operacion", testOperationLease)
 }
@@ -205,7 +206,7 @@ func testProjectIdentity(t *testing.T) {
 	lease := acquireFixture(t, project)
 	acquireFixture(t, unrelated)
 	for _, handle := range []*ScopedProject{project, second} {
-		if _, err := handle.TryExclusive("fixture"); !errors.Is(err, ErrBusy) {
+		if _, err := handle.TryExclusive("second"); !errors.Is(err, ErrBusy) {
 			t.Fatalf("a second acquisition in one process returned %v, want ErrBusy", err)
 		}
 	}
@@ -270,14 +271,14 @@ func testParentPins(t *testing.T) {
 
 func testExclusiveProcess(t *testing.T) {
 	root := t.TempDir()
-	holder := startFilesystemProcess(t, root, "hold")
-	runContender(t, root, "busy")
+	holder := startFilesystemProcess(t, root, "hold", "holder")
+	runContender(t, root, "busy", "contender")
 	before, err := os.ReadDir(root)
 	if err != nil || len(before) != 0 {
 		t.Fatalf("leasing populated a fresh project: %v (%v)", before, err)
 	}
 	holder.stop(t)
-	runContender(t, root, "free")
+	runContender(t, root, "free", "contender")
 	after, err := os.ReadDir(root)
 	if err != nil || len(after) != 0 {
 		t.Fatalf("leasing left project artifacts: %v (%v)", after, err)
@@ -292,7 +293,7 @@ func testInterruptedProcess(t *testing.T) {
 			root := t.TempDir()
 			writeFixture(t, filepath.Join(root, targetName), "before")
 			project := openFixture(t, root)
-			holder := startFilesystemProcess(t, root, point.mode)
+			holder := startFilesystemProcess(t, root, point.mode, "fixture")
 			checkContents(t, filepath.Join(root, targetName), point.want)
 			entries, err := os.ReadDir(root)
 			if err != nil {
@@ -312,7 +313,7 @@ func testInterruptedProcess(t *testing.T) {
 			if len(entries) != want {
 				t.Fatalf("expected %d project files at %s replacement, got %v", want, point.mode, entries)
 			}
-			runContender(t, root, "busy")
+			runContender(t, root, "busy", "contender")
 			holder.stop(t)
 			entries, err = os.ReadDir(root)
 			if err != nil || len(entries) != 1 || entries[0].Name() != targetName {
@@ -329,19 +330,48 @@ func testInterruptedProcess(t *testing.T) {
 	}
 }
 
+func testInterruptedArmed(t *testing.T) {
+	root := t.TempDir()
+	writeFixture(t, filepath.Join(root, targetName), "before")
+	holder := startFilesystemProcess(t, root, "armed", "fixture")
+	runContender(t, root, "busy", "contender")
+	holder.stop(t)
+	checkContents(t, filepath.Join(root, targetName), "before")
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attributed := false
+	for _, entry := range entries {
+		attributed = attributed || strings.HasPrefix(entry.Name(), ".gandalf-sync-fixture-")
+	}
+	if len(entries) != 2 || !attributed {
+		t.Fatalf("armed interruption left unexpected files: %v", entries)
+	}
+}
+
 func TestSyncFilesystemProcess(t *testing.T) {
 	mode := os.Getenv("GANDALF_SYNCFS_TEST_PROCESS")
 	if mode == "" {
 		return
 	}
 	project := openFixture(t, os.Getenv("GANDALF_SYNCFS_TEST_ROOT"))
+	operation := os.Getenv("GANDALF_SYNCFS_TEST_OP")
 	if mode == "busy" {
-		if _, err := project.TryExclusive("fixture"); !errors.Is(err, ErrBusy) {
+		if _, err := project.TryExclusive(operation); !errors.Is(err, ErrBusy) {
 			t.Fatalf("competitor got %v, want ErrBusy", err)
 		}
 		return
 	}
-	lease := acquireFixture(t, project)
+	lease, err := project.TryExclusive(operation)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := lease.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	switch mode {
 	case "free":
 		return
@@ -351,6 +381,15 @@ func TestSyncFilesystemProcess(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer staged()
+	case "armed":
+		testSeamAfterArm = func() {
+			fmt.Println("READY")
+			_, _ = io.Copy(io.Discard, os.Stdin)
+		}
+		before := observeFixture(t, project, targetName)
+		if _, err := project.Change(lease, targetName, before, NewFileState([]byte("after"))); err != nil {
+			t.Fatal(err)
+		}
 	case "after":
 		before := observeFixture(t, project, targetName)
 		assertChange(t, project, lease, targetName, before, NewFileState([]byte("after")), true)
@@ -369,18 +408,19 @@ type filesystemProcess struct {
 	waited bool
 }
 
-func filesystemCommand(t *testing.T, root, mode string) *exec.Cmd {
+func filesystemCommand(t *testing.T, root, mode, operation string) *exec.Cmd {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	t.Cleanup(cancel)
 	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestSyncFilesystemProcess$")
-	cmd.Env = append(os.Environ(), "GANDALF_SYNCFS_TEST_PROCESS="+mode, "GANDALF_SYNCFS_TEST_ROOT="+root)
+	cmd.Env = append(os.Environ(), "GANDALF_SYNCFS_TEST_PROCESS="+mode, "GANDALF_SYNCFS_TEST_ROOT="+root,
+		"GANDALF_SYNCFS_TEST_OP="+operation)
 	return cmd
 }
 
-func startFilesystemProcess(t *testing.T, root, mode string) *filesystemProcess {
+func startFilesystemProcess(t *testing.T, root, mode, operation string) *filesystemProcess {
 	t.Helper()
-	cmd := filesystemCommand(t, root, mode)
+	cmd := filesystemCommand(t, root, mode, operation)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatal(err)
@@ -426,9 +466,9 @@ func (p *filesystemProcess) stop(t *testing.T) {
 	}
 }
 
-func runContender(t *testing.T, root, mode string) {
+func runContender(t *testing.T, root, mode, operation string) {
 	t.Helper()
-	cmd := filesystemCommand(t, root, mode)
+	cmd := filesystemCommand(t, root, mode, operation)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("contender %s: %v (%s)", mode, err, out)
 	}
@@ -494,22 +534,25 @@ func assertChange(t *testing.T, p *ScopedProject, lease *Lease, path string, exp
 }
 
 func testPublicationGuard(t *testing.T) {
+	replaceExternally := func(root string) {
+		name := filepath.Join(root, targetName)
+		// The verified link may already be unlinked by the guard; only the
+		// creation of a foreign entry matters here.
+		_ = os.Remove(name)
+		writeFixture(t, name, "external")
+	}
 	for _, seam := range []struct {
 		name  string
 		apply func(root string)
+		wire  func(func())
 	}{
-		{"reemplazo externo", func(root string) {
-			name := filepath.Join(root, targetName)
-			if err := os.Remove(name); err != nil {
-				t.Errorf("seam could not remove the target: %v", err)
-			}
-			writeFixture(t, name, "external")
-		}},
+		{"reemplazo antes de la reapertura", replaceExternally, func(f func()) { testSeamBeforePublication = f }},
+		{"reemplazo tras la verificacion", replaceExternally, func(f func()) { testSeamBeforeRename = f }},
 		{"nombre eliminado", func(root string) {
 			if err := os.Remove(filepath.Join(root, targetName)); err != nil {
 				t.Errorf("seam could not remove the target: %v", err)
 			}
-		}},
+		}, func(f func()) { testSeamBeforePublication = f }},
 	} {
 		t.Run(seam.name, func(t *testing.T) {
 			root := t.TempDir()
@@ -518,12 +561,15 @@ func testPublicationGuard(t *testing.T) {
 			lease := acquireFixture(t, project)
 			expected := observeFixture(t, project, targetName)
 			after := NewFileState([]byte("after"))
-			testSeamBeforePublication = func() { seam.apply(root) }
-			defer func() { testSeamBeforePublication = nil }()
+			seam.wire(func() { seam.apply(root) })
+			defer func() {
+				testSeamBeforePublication = nil
+				testSeamBeforeRename = nil
+			}()
 			if changed, err := project.Change(lease, targetName, expected, after); changed || !errors.Is(err, ErrConflict) {
 				t.Fatalf("target changed before publication: got changed=%v, err=%v, want ErrConflict", changed, err)
 			}
-			if seam.name == "reemplazo externo" {
+			if seam.name != "nombre eliminado" {
 				checkContents(t, filepath.Join(root, targetName), "external")
 			}
 			entries, err := os.ReadDir(root)

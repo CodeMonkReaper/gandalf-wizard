@@ -239,6 +239,9 @@ func (f *projectFS) change(parts []string, expected, desired FileState, operatio
 		return false, fmt.Errorf("prepare staged publication: %w", err)
 	}
 	deleteArmed = false
+	if testSeamAfterArm != nil {
+		testSeamAfterArm()
+	}
 	if file != nil {
 		if err := file.Close(); err != nil {
 			return false, err
@@ -248,22 +251,30 @@ func (f *projectFS) change(parts []string, expected, desired FileState, operatio
 	if current.Exists {
 		// Existing names can be changed by a non-cooperating editor in the
 		// interval after closing the original handle and before the rename.
-		// The identity precondition rechecks the name and holds a handle
-		// with delete sharing through the rename, so a foreign identity
-		// stops the change instead of being overwritten.
+		// The identity precondition rechecks the name, then removes the
+		// verified inode's link by handle and publishes without replacement,
+		// so a foreign entry is never overwritten.
 		if testSeamBeforePublication != nil {
 			testSeamBeforePublication()
 		}
-		guard, guardID, err := openFile(parent, name, syscall.GENERIC_READ, shareReadDelete)
+		guard, guardID, err := openFile(parent, name, syscall.GENERIC_READ|deleteAccess, shareReadDelete)
 		if err != nil {
 			return false, changeError(err)
 		}
-		defer guard.Close()
 		if guardID != current.FileID {
+			_ = guard.Close()
 			return false, ErrConflict
 		}
+		if err := unlinkHandle(syscall.Handle(guard.Fd())); err != nil {
+			_ = guard.Close()
+			return false, changeError(err)
+		}
+		_ = guard.Close()
 	}
-	if err := renameHandle(stageHandle, parent, name, current.Exists); err != nil {
+	if testSeamBeforeRename != nil {
+		testSeamBeforeRename()
+	}
+	if err := renameHandle(stageHandle, parent, name, false); err != nil {
 		return false, changeError(err)
 	}
 	return true, nil
@@ -271,8 +282,14 @@ func (f *projectFS) change(parts []string, expected, desired FileState, operatio
 
 // testSeamBeforePublication lets tests replace or remove the target in the
 // interval between closing the original handle and the identity recheck.
-// It stays nil outside tests.
-var testSeamBeforePublication func()
+// testSeamBeforeRename lets tests act between the recheck and the rename.
+// testSeamAfterArm lets tests pause a change after the staged file is armed
+// against process termination. All stay nil outside tests.
+var (
+	testSeamBeforePublication func()
+	testSeamBeforeRename      func()
+	testSeamAfterArm          func()
+)
 
 func prepareReplacement(parent syscall.Handle, current *os.File, operation string, data []byte) (*os.File, error) {
 	random := make([]byte, 16)
