@@ -254,4 +254,49 @@ func TestSyncCLI(t *testing.T) {
 			t.Fatalf("text restore missing status: %s", out)
 		}
 	})
+
+	t.Run("restore_conflict_preserves_operation_id_and_diagnostics_in_json", func(t *testing.T) {
+		code, prevOut, errOut := invoke("sync", "preview", "--json")
+		if code != ExitOK {
+			t.Fatalf("preview: code=%d out=%s err=%s", code, prevOut, errOut)
+		}
+		var prev struct {
+			ViewID string `json:"view_id"`
+		}
+		if err := json.Unmarshal([]byte(prevOut), &prev); err != nil || prev.ViewID == "" {
+			t.Fatalf("decode preview: %v", err)
+		}
+		code, appOut, errOut := invoke("sync", "apply", "--json", "--view-id", prev.ViewID)
+		if code != ExitOK {
+			t.Fatalf("apply: code=%d out=%s err=%s", code, appOut, errOut)
+		}
+		var app struct {
+			OperationID string `json:"operation_id"`
+		}
+		if err := json.Unmarshal([]byte(appOut), &app); err != nil || app.OperationID == "" {
+			t.Fatalf("decode apply: %v", err)
+		}
+
+		// Edit AGENTS.md after apply -> restore --json must return ExitConfigError with operation_id and diagnostics.
+		if err := os.WriteFile(filepath.Join(projectRoot, "AGENTS.md"), []byte(foreignAgents+"post-edit\n"), 0o644); err != nil {
+			t.Fatalf("edit AGENTS.md: %v", err)
+		}
+		code, confOut, _ := invoke("sync", "restore", "--json", "--operation-id", app.OperationID)
+		if code != ExitConfigError {
+			t.Fatalf("expected ExitConfigError on restore conflict, got %d (out=%s)", code, confOut)
+		}
+		var conf struct {
+			OperationID string `json:"operation_id"`
+			Diagnostics []struct {
+				Code string `json:"code"`
+				Path string `json:"path"`
+			} `json:"diagnostics"`
+		}
+		if err := json.Unmarshal([]byte(confOut), &conf); err != nil {
+			t.Fatalf("decode conflict json: %v (out=%s)", err, confOut)
+		}
+		if conf.OperationID != app.OperationID || len(conf.Diagnostics) == 0 || conf.Diagnostics[0].Code != "restore_conflict" {
+			t.Fatalf("expected operation_id=%q and restore_conflict diagnostic, got %+v", app.OperationID, conf)
+		}
+	})
 }

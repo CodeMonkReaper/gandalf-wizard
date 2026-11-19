@@ -371,16 +371,16 @@ func runSyncApply(args []string, deps Dependencies) int {
 		return failCatalog(deps, *jsonMode, out, err)
 	}
 	result, err := projectsync.Apply(proj, synccatalog.New(proj), selection, projectsync.DefaultVerifiedProfiles(), *viewID, projectsync.ApplyOptions{})
+	out.ViewID = result.ViewID
+	out.OperationID = result.OperationID
+	out.Changes = result.Changes
+	out.Diagnostics = result.Diagnostics
 	if err != nil {
 		return failSync(deps, *jsonMode, out, err)
 	}
 
 	out.Status = result.Status
 	out.Reason = result.Reason
-	out.ViewID = result.ViewID
-	out.OperationID = result.OperationID
-	out.Changes = result.Changes
-	out.Diagnostics = result.Diagnostics
 	text := fmt.Sprintf("%s: %d change(s) (operation %s)", result.Status, len(result.Changes), result.OperationID)
 	for _, change := range result.Changes {
 		text += fmt.Sprintf("\n  %s %s", change.Action, change.Path)
@@ -412,15 +412,15 @@ func runSyncRestore(args []string, deps Dependencies) int {
 	defer proj.Close()
 
 	result, err := projectsync.Restore(proj, *operationID, projectsync.RestoreOptions{})
+	out.OperationID = result.OperationID
+	out.Changes = result.Changes
+	out.Diagnostics = result.Diagnostics
 	if err != nil {
 		return failSync(deps, *jsonMode, out, err)
 	}
 
 	out.Status = result.Status
 	out.Reason = result.Reason
-	out.OperationID = result.OperationID
-	out.Changes = result.Changes
-	out.Diagnostics = result.Diagnostics
 	text := fmt.Sprintf("%s: %d change(s) (operation %s)", result.Status, len(result.Changes), result.OperationID)
 	for _, change := range result.Changes {
 		text += fmt.Sprintf("\n  %s %s", change.Action, change.Path)
