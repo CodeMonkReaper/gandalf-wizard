@@ -53,3 +53,33 @@ slug: sync-skills-patrones
 
 - [closed 2026-11-19, propietario] Q1 — T002, proteger un archivo que otro programa reemplaza entre la comprobación y la publicación. Decisión: precondición de identidad — reverificar junto al reemplazo, eliminar el enlace verificado por handle y publicar sin reemplazo; ante identidad distinta, `ErrConflict` conservando la edición externa. Casos AC-05 y AC-07. Implementado en `c525306`.
 - [closed 2026-11-19, propietario] Q2 — T002, atribuir los temporales a una operación antes de que puedan sobrevivir al proceso. Decisión: el lease lleva el identificador de operación (`TryExclusive(operation)`) y los temporales se nombran `.gandalf-sync-<operación>-<id>.tmp`. Implementado en `53de71b` y probado desde `Change` en `c525306`. Caso AC-07.
+
+## T003 · 2026-11-19
+
+- **Tarea / Issue**: T003 / [#31](https://github.com/CodeMonkReaper/gandalf-wizard/issues/31) — implementar catálogo inmutable y lectura de selección en `internal/synccatalog`.
+- **Estado previo (RED)**: el coordinador creó el stub [catalog.go](../../../../internal/synccatalog/catalog.go) y el test inicial [catalog_test.go](../../../../internal/synccatalog/catalog_test.go). Ejecutó `go test -count=1 -v ./internal/synccatalog -run '^TestSyncCatalog$'` y verificó el fallo esperado (`not implemented` en los 3 subtests).
+- **Delegación a Vibe (intento 1)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t003-catalog` · tier `balanced` · modelo configurado `zai-glm-5-3-flash` (efectivo: no disponible).
+  - **Run ID / Estado**: no disponible · `BLOCKED`.
+  - **Motivo**: `rsc-vibe-bridge init` omitió `.vibe/agents/developer.toml` porque ya existía la versión de RSC en el repo; al despachar, el bridge bloqueó el envío porque `.vibe/agents/developer.toml` difiere de la política de seguridad del bridge.
+  - **Trabajo realizado por Vibe**: ninguno (bloqueado antes de ejecutar).
+  - **Verificaciones ejecutadas por el coordinador**: `node <bridge> init`, `node <bridge> doctor` (9 checks ok), `go test -count=1 -v ./internal/synccatalog -run '^TestSyncCatalog$'` (RED confirmado).
+  - **Limitaciones y siguiente paso**: requiere decisión del propietario para respaldar `.vibe/agents/developer.toml` e instalar la plantilla segura del bridge (o usar un perfil alternativo del bridge) y reintentar el despacho a Vibe.
+- **Delegación a Vibe (intento 2, tras instalar plantilla segura del bridge)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t003-catalog` · tier `balanced` · solicitado/efectivo `zai-glm-5-3-flash`.
+  - **Run ID / Estado**: `eee4addd-8ead-4df3-b675-fe79972033f5` · `DONE_WITH_CONCERNS` (`stopReason: limit`, 23.7s).
+  - **Trabajo realizado por Vibe**: ningún archivo modificado; agotó los 6 turnos leyendo archivos del repo e intentando `bash` (deshabilitado).
+  - **Verificaciones ejecutadas por el coordinador**: `git diff --stat internal/synccatalog` (sin cambios), `go test -count=1 -v ./internal/synccatalog -run '^TestSyncCatalog$'` (sigue en RED con `not implemented`), `go vet ./...` y `gofmt -l internal/synccatalog`.
+  - **Siguiente paso**: reintento acotado (`sync-t003-catalog-r2`, `balanced`, 6 turnos) entregando la firma de `syncfs` en el prompt e instruyendo escribir `catalog.go` y `catalog_test.go` directamente.
+- **Delegación a Vibe (intento 3 / reintento acotado)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t003-catalog-r2` · tier `balanced` · solicitado/efectivo `zai-glm-5-3-flash`.
+  - **Run ID / Estado**: `d6c2d950-c59a-4aee-a1ac-85ac24c81233` · `DONE_WITH_CONCERNS` (exit 0, 78.6 s; worker sin shell).
+  - **Trabajo realizado por Vibe**: implementó [catalog.go](../../../../internal/synccatalog/catalog.go) y añadió 6 subpruebas en [catalog_test.go](../../../../internal/synccatalog/catalog_test.go).
+  - **Verificación y ajustes del coordinador**: `go test -count=1 -v ./internal/synccatalog -run '^TestSyncCatalog$'` detectó 3 detalles (rechazo de directorios en `collectSkillResources`, `..` en `validateID` y falta de actualización de `index.json` en `writeEntry`). Tras corregirlos y añadir rechazo de tokens finales con `io.EOF`, pasaron 9/9 subpruebas y los 14 paquetes (`3abc7d5`).
+- **Cierre y revisión de T003**:
+  - **Estado**: completo. Nivel de revisión 1 (`rsc risk --base 8aa4f5c --json`: tier 1, 1 revisor, sin aprobación humana).
+  - **Revisión**: ronda 1 (`3abc7d5`, revisor en contexto fresco) → 6 hallazgos (`L9`–`L14`: 2 blocker, 3 should-fix, 1 nit; `changes-needed`). Todos corregidos con pruebas de regresión en `af9c828` y marcados `fixed` en el ledger. Ronda 2 (`af9c828`, revisor en contexto fresco) → `VERDICT: pass` (0 hallazgos).
+  - **Controles ejecutados**: `gofmt -l internal/synccatalog` (limpio), `go vet ./...` (ok), `go build ./...` (ok), `go test -count=1 -v ./internal/synccatalog -run '^TestSyncCatalog$'` (12/12 PASS), `go test -count=1 ./...` (14/14 paquetes en verde). Trazabilidad AC-01, AC-02, AC-05.
