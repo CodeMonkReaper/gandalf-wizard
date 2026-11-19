@@ -185,3 +185,11 @@ slug: sync-skills-patrones
   - `go test -count=1 -v ./internal/cli -run '^TestSyncAcceptance$'` — **PASS** (`0.75 s`).
   - `GANDALF_SYNC_NATIVE_TEST=1 go test -count=1 -v ./internal/syncnative -run '^TestSyncNativeAcceptance$'` — **PASS** (`12.74 s`, Codex `0.169.0` + Vibe `3.1.3`, `proxy_denials=0`).
   - Evidencia registrada en [sync-skills-patrones-native.md](../verifications/sync-skills-patrones-native.md). Trazabilidad AC-01 a AC-08.
+  - **Revisión**: `rsc risk --base 00280b4 --json` (tier 1, 1 revisor). Ronda 1 (`933a316`, revisor en contexto fresco) → **`VERDICT: pass`** (0 hallazgos).
+
+## T009 · 2026-11-19
+
+- **Tarea / Issue**: T009 / [#37](https://github.com/CodeMonkReaper/gandalf-wizard/issues/37) — cerrar verificación y registrar rollback.
+- **Estado**: completo. Nivel de revisión 0 (solo documentación).
+- **Controles ejecutados**: `gofmt -l internal/syncfs internal/synccatalog internal/projectsync internal/cli internal/syncnative` (limpio), `go vet ./...` (ok), `go build ./...` (ok), `GOOS=linux GOARCH=amd64 go build ./...` (ok), pruebas dirigidas T002–T008 (todas **PASS**), `TestSyncNativeAcceptance` con Codex `0.169.0` + Vibe `3.1.3` (**PASS**, `proxy_denials=0`) y `go test -count=1 ./...` (**15/15 paquetes PASS**).
+- **Evidencia y rollback**: [sync-skills-patrones-closing.md](../verifications/sync-skills-patrones-closing.md). Trazabilidad AC-01 a AC-09.
