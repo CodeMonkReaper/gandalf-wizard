@@ -112,3 +112,32 @@ slug: sync-skills-patrones
   - **Estado**: completo. Nivel de revisión 1 (`rsc risk --base ede5c25 --json`: tier 1, 1 revisor, sin aprobación humana).
   - **Revisión**: ronda 1 (`d718fee`, revisor en contexto fresco) → 4 hallazgos `should-fix` (`L15`–`L18`, 0 blocker; `changes-needed`). Todos corregidos con pruebas de regresión en `6a38ffa` y marcados `fixed` en el ledger. Ronda 2 (`6a38ffa`, revisor en contexto fresco) → `VERDICT: pass` (0 hallazgos).
   - **Controles ejecutados**: `gofmt -l internal/projectsync` (limpio), `go vet ./...` (ok), `go build ./...` (ok), `go test -count=1 -v ./internal/projectsync -run '^TestSyncPreview$'` (9/9 PASS), `go test -count=1 ./...` (15/15 paquetes en verde). Trazabilidad AC-02, AC-03, AC-04, AC-05.
+
+## T005 · 2026-11-19
+
+- **Tarea / Issue**: T005 / [#33](https://github.com/CodeMonkReaper/gandalf-wizard/issues/33) — aplicar vista autorizada con respaldo privado y registro recuperable en `internal/projectsync`.
+- **Estado previo (RED)**: el coordinador creó el stub [apply.go](../../../../internal/projectsync/apply.go) y el test inicial [apply_test.go](../../../../internal/projectsync/apply_test.go). Ejecutó `go test -count=1 -v ./internal/projectsync -run '^TestSyncApply$'` y confirmó el fallo esperado (`not implemented` en 3/3 subtests).
+- **Delegación a Vibe (intento 1)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t005-apply` · tier `balanced` · solicitado `deepseek-v4-1-flash-1017` (efectivo: no disponible).
+  - **Run ID / Estado**: `e85ffa21-59bb-48f2-83f9-eed5654f8b20` · `BLOCKED` (exit 1, 7.4 s).
+  - **Motivo**: `vibe` rechazó `deepseek-v4-1-flash-1017` porque no está declarado como alias en la configuración de Vibe (`Available: mistral-large-4, mistral-large-4-0, mistral-medium-3.5, mistral-small-2603, zai-glm-5-3, zai-glm-5-3-flash`).
+  - **Trabajo realizado por Vibe**: ninguno.
+  - **Siguiente paso**: elegir uno de los 6 alias activos en Vibe o declarar `deepseek-v4-1-flash-1017` en `~/.vibe/config.toml` y reintentar el despacho de T005.
+- **Delegación a Vibe (intento 2)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t005-apply-r2` · tier `balanced` · solicitado `deepseek-v4-1-flash-1017` (efectivo: no disponible).
+  - **Run ID / Estado**: `f75a40aa-0389-4fea-ad01-ed7dea0c3755` · `BLOCKED` (exit 1, 4.0 s).
+  - **Motivo**: `[[models]]` en `~/.vibe/config.toml` colisionó con la tabla `[models.*]` existente del archivo de usuario (`Cannot mutate immutable namespace ('models',)`). Se revirtió de inmediato el cambio en `~/.vibe/config.toml`.
+  - **Trabajo realizado por Vibe**: ninguno.
+  - **Siguiente paso**: elegir uno de los 6 alias ya activos en Vibe (`mistral-large-4`, `mistral-large-4-0`, `mistral-medium-3.5`, `mistral-small-2603`, `zai-glm-5-3`, `zai-glm-5-3-flash`) para despachar T005.
+- **Delegación a Vibe (intento 3, tras corregir sintaxis de `models = [ ... ]` en `~/.vibe/config.toml`)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t005-apply-r4` · tier `balanced` (perfil `developer`) · solicitado/efectivo `deepseek-v4-1-flash-1017`.
+  - **Run ID / Estado**: `169b2680-28c1-4090-8fda-e15631f5bbde` · `DONE_WITH_CONCERNS` (exit 3, `stopReason: limit`, 25.2 s; worker sin shell).
+  - **Trabajo realizado por Vibe**: implementó [apply.go](../../../../internal/projectsync/apply.go) completo (~550 líneas).
+  - **Verificación y ajustes del coordinador**: sustituyó 4 lecturas por `state.Bytes`/`ch.Before.Bytes` para mantener 100% del acceso confinado en `syncfs`, y añadió 3 subpruebas de borde en [apply_test.go](../../../../internal/projectsync/apply_test.go) (`23b5d31`).
+- **Cierre y revisión de T005**:
+  - **Estado**: completo. Nivel de revisión 1 (`rsc risk --base ac6e18a --json`: tier 1, 1 revisor, sin aprobación humana).
+  - **Revisión**: ronda 1 (`23b5d31`, revisor en contexto fresco) → 5 hallazgos (`L19`–`L23`: 1 blocker ACLs privados en Windows, 3 should-fix, 1 nit; `changes-needed`). Todos corregidos en `f2fbc9c` (añadiendo `syncfs.ScopedProject.RestrictDir` con DACL protegido `D:P(A;OICI;FA;;;<SID>)`, verificación de ACLs y respaldo pre-escritura en `TestSyncApply`, rechazo de `OperationID` duplicado y `StatusRejected` en fallos previos a `pending.json`) y marcados `fixed` en el ledger. Ronda 2 (`f2fbc9c`, revisor en contexto fresco) → `VERDICT: pass` (0 hallazgos).
+  - **Controles ejecutados**: `gofmt -l internal/syncfs internal/projectsync` (limpio), `go vet ./...` (ok), `go build ./...` (ok), compilación cruzada `GOOS=linux GOARCH=amd64 go build ./...` (ok), `go test -count=1 -v ./internal/projectsync -run '^TestSyncApply$'` (6/6 PASS), `go test -count=1 ./...` (15/15 paquetes en verde). Trazabilidad AC-03, AC-04, AC-05, AC-06, AC-07, AC-08.
