@@ -17,7 +17,7 @@ last-amended: 2026-11-17
 
 ## Hechos y alcance
 
-- Objetivo: configurar, generar, ejecutar, supervisar, evaluar y optimizar entornos asistidos por IA. Contexto conceptual: [contexto maestro](../../../gandalf-wizard-contexto-maestro.md).
+- Objetivo: configurar, generar, ejecutar, supervisar, evaluar y optimizar entornos asistidos por IA. Contexto conceptual de la ratificación: [inventario original, conservado en Git](https://github.com/CodeMonkReaper/gandalf-wizard/blob/4aa2986080d343e500c39e5866fdcbb5f7406508/gandalf-wizard-contexto-maestro.md).
 - Proyecto software complejo; workflow aprobado: issues, ramas y pull requests. Rama actual por defecto: `master`; remoto público autorizado en `origin`: [CodeMonkReaper/gandalf-wizard](https://github.com/CodeMonkReaper/gandalf-wizard).
 - El contexto maestro contiene propuestas de producto, arquitectura y stack; requieren decisiones y especificaciones aprobadas.
 - Existen convenciones iniciales de Go en [go.md](../stack/go.md), módulo `go.mod` y paquetes iniciales de Foundation 0.1 en desarrollo bajo rama aislada.

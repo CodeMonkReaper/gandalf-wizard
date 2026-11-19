@@ -49,7 +49,7 @@ La preparación local está en `chore/rsc-development-environment`, desde `maste
 
 Cada asistente retoma desde [el índice](../index.md), la constitución, los artefactos de la tarea y el último checkpoint en `sdd/sessions/`. Registrar fase, tarea, rama/worktree, evidencia, bloqueos y siguiente acción antes del relevo. No compartir conversaciones privadas. Usar `worktrees` de RSC cuando se necesite aislamiento; el worktree preexistente `fireworm` no se ha modificado ni equipado automáticamente.
 
-El contexto maestro permanece en su ruta original. No hay conexiones ROMERO, Context7 ni otros servidores MCP añadidos por esta instalación. MCP es una capacidad de los asistentes; cada conexión futura necesita autorización.
+La referencia de producto vigente se encuentra en el [índice de la wiki](../index.md). Esta instalación de RSC dejó pendiente la configuración de conexiones MCP como ROMERO o Context7. Cada conexión futura necesita autorización.
 
 ## Capacidades comprobadas y límites
 

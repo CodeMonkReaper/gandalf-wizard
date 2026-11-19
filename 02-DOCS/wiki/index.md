@@ -3,15 +3,15 @@ type: index
 title: Conocimiento de Gandalf Wizard
 description: Punto de entrada compartido por Vibe, Codex y Antigravity.
 tags: [harness, knowledge, sdd]
-timestamp: 2026-11-18T01:50:00Z
+timestamp: 2026-11-19T15:16:34Z
 topic: harness
 ---
 
 # Conocimiento del proyecto
 
-Al retomar, leer el [checkpoint vigente](sdd/sessions/2026-11-18-retro-router-02.md) (retro router-02; anteriores: [cierre router-02](sdd/sessions/2026-11-18-cierre-router-02.md), [retro cli-gandalf](sdd/sessions/2026-11-18-retro-cli-gandalf.md), [cierre](sdd/sessions/2026-11-18-cierre-cli-gandalf.md), [post-merge](sdd/sessions/2026-11-18-post-merge.md), [2026-11-17](sdd/sessions/2026-11-17-entorno-rsc.md)), después los documentos necesarios para la tarea.
+Al retomar, leer el [checkpoint vigente del 19 de noviembre](sdd/sessions/2026-11-19-consolidacion-v1-1-0.md), que registra la consolidación del alcance de producto. Checkpoints anteriores: [retro Router 0.2](sdd/sessions/2026-11-18-retro-router-02.md), [cierre Router 0.2](sdd/sessions/2026-11-18-cierre-router-02.md), [retro CLI](sdd/sessions/2026-11-18-retro-cli-gandalf.md), [cierre CLI](sdd/sessions/2026-11-18-cierre-cli-gandalf.md), [post-merge de Foundation](sdd/sessions/2026-11-18-post-merge.md) y [entorno RSC](sdd/sessions/2026-11-17-entorno-rsc.md).
 
-- Producto: [contexto maestro](../../gandalf-wizard-contexto-maestro.md), inventario conceptual, no especificación aprobada.
+- Producto: la [especificación maestra GW-SPEC-001](../../Gandalf_Wizard_v1.1.0/docs/GANDALF_WIZARD_ESPECIFICACION_MAESTRA.md) `v1.1.0-draft` consolida 57 áreas. `DEC-11` incorpora Gandalf Control Center (`GW-57`) al alcance documental. Su diseño técnico detallado está pendiente. El [índice del paquete](../../Gandalf_Wizard_v1.1.0/README.md) reúne sus fuentes y anexos.
 - Harness: [instalación y capacidades](harness/installation.md), [plan generado](harness/installation-plan.md), [decisiones](harness/decisions.md).
 - ASDD: [constitución ratificada v1.2.0](sdd/constitution.md), [configuración SDD](sdd/config.yaml), [convenciones Go](stack/go.md), [decisiones](sdd/decisions.md), [criterios de revisión](../../REVIEW.md). Repositorio público: [CodeMonkReaper/gandalf-wizard](https://github.com/CodeMonkReaper/gandalf-wizard) ([Issue #1](https://github.com/CodeMonkReaper/gandalf-wizard/issues/1): entorno RSC/ASDD, cerrado en PR #4).
 - Foundation 0.1 ([Issue #2](https://github.com/CodeMonkReaper/gandalf-wizard/issues/2), cerrado en PR #3) cuenta con la [especificación aprobada de consulta de memoria en ROMERO](sdd/specs/consulta-memoria-romero.md), su [plan técnico aprobado con tareas](sdd/plans/consulta-memoria-romero.md), su [informe de consistencia (`analyze`: PASS, 0 hallazgos abiertos)](sdd/analysis/consulta-memoria-romero.md) y el [registro de progreso](sdd/progress/consulta-memoria-romero.md) (`T001`–`T009` completadas e integradas en `master` mediante `30bd22c`).
@@ -19,7 +19,7 @@ Al retomar, leer el [checkpoint vigente](sdd/sessions/2026-11-18-retro-router-02
 - Épica Router 0.2 ([Issue #15](https://github.com/CodeMonkReaper/gandalf-wizard/issues/15), cerrada en el [PR #27](https://github.com/CodeMonkReaper/gandalf-wizard/pull/27), merge `abf5901`): adaptadores Antigravity + Mistral Vibe, APIs directas (`openai`, `mistral` y compatibles, `gemini`), catálogo de modelos/esfuerzos, selección explicable, fallback solo texto y controles de secretos.
   - Router 0.2 cuenta con [especificación entregada](sdd/specs/router-02.md), [plan técnico con tareas](sdd/plans/router-02.md), [informe de consistencia (`analyze`: PASS)](sdd/analysis/router-02.md), [registro de avance y cola de decisiones](sdd/progress/router-02.md), [verificación de cierre (PASS)](sdd/verifications/2026-11-18-router-02-closing.md), [revisión de cierre (APPROVE)](sdd/reviews/router-02.md) y [bundle de archivo](sdd/archive/router-02/final-report.md).
 - Épica `sync-skills-patrones` ([Issue #28](https://github.com/CodeMonkReaper/gandalf-wizard/issues/28), abierta): sincronización reproducible de skills, reglas y patrones entre harnesses diferida desde Foundation 0.1; pendiente de `specify`.
-- FTD: [limpieza post-merge y alineación documental de Foundation 0.1](ftd/limpieza-post-merge-foundation-01.md).
+- FTD: [actualización de la wiki con GW-SPEC-001](ftd/actualizacion-wiki-v1-1-0.md) y [limpieza post-merge de Foundation 0.1](ftd/limpieza-post-merge-foundation-01.md).
 - Evidencia: [verificación del entorno](sdd/verifications/2026-11-17-entorno-rsc.json), [ratificación y doctor posterior](sdd/verifications/2026-11-17-constitution-ratification.json), [integración viva con ROMERO (`rev 3f46f9a`)](sdd/verifications/2026-11-18-romero-live-integration.json), [verificación de cierre de cli-gandalf (PASS)](sdd/verifications/2026-11-18-cli-gandalf-closing.md), [verificación viva de router-02](sdd/verifications/2026-11-18-router-02-live-verification.json), [verificación de cierre de router-02 (PASS)](sdd/verifications/2026-11-18-router-02-closing.md).
 
-Stack inicial (Go) y controles de calidad fijados en `v1.1.0`; Foundation 0.1 y Router 0.2 (`router-02`) entregados y verificados en `master`; la sincronización reproducible de skills y patrones pasa a la nueva épica [#28](https://github.com/CodeMonkReaper/gandalf-wizard/issues/28) ([decisiones](sdd/decisions.md)); las decisiones de fases futuras del contexto maestro siguen abiertas.
+La [constitución v1.2.0](sdd/constitution.md) rige la aprobación de cada implementación. El roadmap y las decisiones abiertas de producto se consultan en los anexos C y D de [GW-SPEC-001](../../Gandalf_Wizard_v1.1.0/docs/GANDALF_WIZARD_ESPECIFICACION_MAESTRA.md).

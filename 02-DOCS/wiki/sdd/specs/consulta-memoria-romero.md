@@ -28,7 +28,7 @@ Consultar la wiki del proyecto o pedir la referencia a quien documentó la decis
 
 ## Objetivos
 
-Recuperar recuerdos pertinentes al proyecto y mostrar qué dice cada uno, qué referencia lo identifica y qué respaldo declara ROMERO. El alcance procede de los IDs 244, 255 y 260–263 y de la evidencia sugerida para Foundation 0.1. [Contexto maestro, secciones 4.XV y 7](../../../../gandalf-wizard-contexto-maestro.md)
+Recuperar recuerdos pertinentes al proyecto y mostrar qué dice cada uno, qué referencia lo identifica y qué respaldo declara ROMERO. El alcance procede de los IDs 244, 255 y 260–263 y de la evidencia sugerida para Foundation 0.1. [Contexto maestro histórico, secciones 4.XV y 7](https://github.com/CodeMonkReaper/gandalf-wizard/blob/4aa2986080d343e500c39e5866fdcbb5f7406508/gandalf-wizard-contexto-maestro.md)
 
 ## Fuera de alcance
 
@@ -54,7 +54,7 @@ El cliente publicado de ROMERO distingue el resumen y el identificador del recue
 
 ## Qué debe respetar
 
-La consulta requiere un ámbito de proyecto inequívoco y permisos vigentes. Gandalf presenta el contenido recuperado como evidencia atribuida. Las acciones, herramientas y políticas siguen sujetas a sus autorizaciones. Gandalf solo solicita operaciones de lectura y protege las credenciales. [Contexto maestro, secciones 1 y 8](../../../../gandalf-wizard-contexto-maestro.md)
+La consulta requiere un ámbito de proyecto inequívoco y permisos vigentes. Gandalf presenta el contenido recuperado como evidencia atribuida. Las acciones, herramientas y políticas siguen sujetas a sus autorizaciones. Gandalf solo solicita operaciones de lectura y protege las credenciales. [Contexto maestro histórico, secciones 1 y 8](https://github.com/CodeMonkReaper/gandalf-wizard/blob/4aa2986080d343e500c39e5866fdcbb5f7406508/gandalf-wizard-contexto-maestro.md)
 
 ## Comportamiento
 

@@ -25,4 +25,4 @@ topic: sdd
 
 Iniciar la etapa `specify` para [sync-skills-patrones (Épica #28)](https://github.com/CodeMonkReaper/gandalf-wizard/issues/28): definir la frontera con RSC (constitución P10), los harnesses objetivo y el contrato de sincronización reproducible de skills, reglas y patrones. Las suposiciones `Q1`–`Q8` de `router-02` quedan en [progress/router-02.md](../progress/router-02.md) para consideración del propietario.
 
-- Antes de relevar: este checkpoint queda enlazado desde [wiki/index.md](../index.md).
+- Antes de relevar: este checkpoint queda enlazado desde [wiki/index.md](../../index.md).

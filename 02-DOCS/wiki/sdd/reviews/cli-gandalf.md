@@ -4,7 +4,7 @@
 
 - Rama: `feat/cli-gandalf` (17 commits sobre `master`, sin divergencia), estado `8990035` (limpio)
 - Tier: 1 (`rsc risk --base master --json`: `reviewers: 1`, `humanApproval: false`); revisión de cierre en contexto fresco del diff completo `git diff master...HEAD` (~4.659 inserciones, 30 archivos)
-- Insumos: [spec](../specs/cli-gandalf.md) (AC1-AC13), [plan](../plans/cli-gandalf.md) (T001-T010), [constitución v1.2.0](../constitution.md), [REVIEW.md](../../../REVIEW.md), [récord de verificación PASS](../verifications/2026-11-18-cli-gandalf-closing.md)
+- Insumos: [spec](../specs/cli-gandalf.md) (AC1-AC13), [plan](../plans/cli-gandalf.md) (T001-T010), [constitución v1.2.0](../constitution.md), [REVIEW.md](../../../../REVIEW.md), [récord de verificación PASS](../verifications/2026-11-18-cli-gandalf-closing.md)
 - Ledger de tareas: 10 hallazgos únicos, 0 abiertos (5 fixed, 5 intentional), 8 tareas, media 1.00 ronda, 0 falsos positivos
 
 ## Pases ejecutados

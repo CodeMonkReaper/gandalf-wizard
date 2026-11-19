@@ -26,4 +26,4 @@ topic: sdd
 
 - Commits sin tráiler de IA (P8) bajo autoría del propietario.
 - `01-TOOLS/vibe-bridge/`, `.vibe/config.toml` y `gandalf.exe` están ignorados por `.gitignore`; `.git/hooks/pre-commit` y `.git/hooks/pre-push` son locales a este clon, mientras `TestRepoSecurityGate` viaja en el repo.
-- Antes de relevar: este checkpoint queda enlazado desde [wiki/index.md](../index.md).
+- Antes de relevar: este checkpoint queda enlazado desde [wiki/index.md](../../index.md).

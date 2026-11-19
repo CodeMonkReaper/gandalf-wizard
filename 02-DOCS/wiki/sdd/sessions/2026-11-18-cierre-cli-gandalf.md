@@ -25,4 +25,4 @@ topic: sdd
 - Commits SIN tráiler de IA (P8): autoría del propietario, formato ya corregido en el ciclo.
 - `gandalf.exe` en la raíz es artefacto de humo desechable; `.vibe/` y `01-TOOLS/vibe-bridge/` son infra del entorno, no del proyecto: no commitear.
 - El caso «empty» de la aceptación usa un servidor con `emptySearch`; los handlers bloqueados despiertan por canal `release` (la desconexión del cliente no siempre cancela `r.Context()` en el lado servidor y `httptest.Server.Close` colgaba).
-- Antes de relevar: este checkpoint queda enlazado desde [wiki/index.md](../index.md).
+- Antes de relevar: este checkpoint queda enlazado desde [wiki/index.md](../../index.md).

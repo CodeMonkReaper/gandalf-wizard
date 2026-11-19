@@ -27,4 +27,4 @@ topic: sdd
 
 Contexto maestro (`gandalf-wizard-contexto-maestro.md`) tiene propuestas pendientes de spec. Abrir nuevo issue y empezar con grilling + specify cuando se retome.
 
-- Antes de relevar: este checkpoint queda enlazado desde [wiki/index.md](../index.md).
+- Antes de relevar: este checkpoint queda enlazado desde [wiki/index.md](../../index.md).

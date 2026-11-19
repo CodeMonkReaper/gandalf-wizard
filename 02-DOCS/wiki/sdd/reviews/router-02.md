@@ -5,7 +5,7 @@
 - Rama: `feat/router-02` (25 commits sobre `master`, 0 detrás), estado `cef75ff` (limpio)
 - Tier: 1 (`rsc risk --base master --json`: `tier: 1`, `classes: ["default", "docs"]`, `reviewers: 1`, `humanApproval: false`)
 - Revisión en contexto frío (`421c7b8e`, `research`): diff completo `git diff master...HEAD` (`42` archivos, `8960` inserciones / `21` borrados) en ronda 1 (`34c5237`) + diff incremental `34c5237..cef75ff` en ronda 2
-- Insumos: [spec](../specs/router-02.md) (AC1–AC19), [plan](../plans/router-02.md) (T001–T010), [constitución v1.2.0](../constitution.md), [REVIEW.md](../../../REVIEW.md), [récord de verificación PASS](../verifications/2026-11-18-router-02-closing.md) y [evidencia viva](../verifications/2026-11-18-router-02-live-verification.json)
+- Insumos: [spec](../specs/router-02.md) (AC1–AC19), [plan](../plans/router-02.md) (T001–T010), [constitución v1.2.0](../constitution.md), [REVIEW.md](../../../../REVIEW.md), [récord de verificación PASS](../verifications/2026-11-18-router-02-closing.md) y [evidencia viva](../verifications/2026-11-18-router-02-live-verification.json)
 - Ledger de tareas (`T001`–`T009`): 12 hallazgos únicos (`L11`–`L22`), 0 repetidos, 0 abiertos (12 `fixed`, media 1.00 ronda)
 
 ## Pases ejecutados
