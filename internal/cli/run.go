@@ -30,6 +30,14 @@ Subcomandos:
                                Elige un perfil y explica por qué (no ejecuta)
   run [--json] [--complexity <baja|media|alta>] [--risk <bajo|medio|alto>] [--profile <perfil>] <tarea>
                                Ejecuta la tarea con el perfil elegido y fallback
+  catalog register [--json] --kind <skill|rule|pattern> --id <id> --version <ver> --source <ruta>
+                               Registra un componente inmutable en el catálogo local
+  catalog list [--json]        Lista las entradas registradas en el catálogo local
+  sync preview [--json]        Calcula la vista previa determinista de sincronización (solo lectura)
+  sync apply [--json] --view-id <id>
+                               Aplica una vista previa autorizada con respaldo privado
+  sync restore [--json] --operation-id <id>
+                               Restaura una operación aplicada o interrumpida
 
 Flags de anulación (config show, doctor, memory query, models, route, run):
   --project <id>        Proyecto activo para esta ejecución
@@ -64,6 +72,10 @@ func Run(ctx context.Context, args []string, deps Dependencies) int {
 		return runRoute(ctx, args[1:], deps)
 	case "run":
 		return runRun(ctx, args[1:], deps)
+	case "catalog":
+		return runCatalog(args[1:], deps)
+	case "sync":
+		return runSync(args[1:], deps)
 	default:
 		fmt.Fprintf(deps.Stderr, "error: subcomando desconocido %q\n\n%s", args[0], usageText)
 		return ExitUsageError
