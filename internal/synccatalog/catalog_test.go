@@ -1,7 +1,11 @@
 package synccatalog
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -270,6 +274,145 @@ func TestSyncCatalog(t *testing.T) {
 		}
 		if !found {
 			t.Fatalf("expected version_mismatch diagnostic, got %+v", diagErr.Diagnostics)
+		}
+	})
+
+	t.Run("resolve_rejects_invalid_selection_and_duplicates", func(t *testing.T) {
+		badSel := Selection{
+			Targets: []string{"codex"},
+			Components: []ComponentRef{
+				{Kind: KindSkill, ID: "..", Version: ".."},
+			},
+		}
+		if _, err := cat.Resolve(badSel); !errors.Is(err, ErrInvalidInput) {
+			t.Fatalf("expected ErrInvalidInput for traversal ref, got %v", err)
+		}
+
+		dupSel := Selection{
+			Targets: []string{"codex"},
+			Components: []ComponentRef{
+				{Kind: KindRule, ID: "evidencia-de-pruebas", Version: "1.0.0"},
+				{Kind: KindRule, ID: "evidencia-de-pruebas", Version: "2.0.0"},
+			},
+		}
+		if _, err := cat.Resolve(dupSel); !errors.Is(err, ErrInvalidInput) {
+			t.Fatalf("expected ErrInvalidInput for duplicate component, got %v", err)
+		}
+
+		if _, err := cat.Register(KindRule, "dep-invalid", "1.0.0", rulePath, RegisterOptions{
+			Dependencies: []Dependency{{Kind: KindRule, ID: "..", Version: "1.0.0"}},
+		}); !errors.Is(err, ErrInvalidInput) {
+			t.Fatalf("expected ErrInvalidInput for invalid dependency id, got %v", err)
+		}
+	})
+
+	t.Run("manifest_tampering_traversal_identity_and_dependencies", func(t *testing.T) {
+		isoRoot := t.TempDir()
+		isoProj, err := syncfs.OpenProject(isoRoot)
+		if err != nil {
+			t.Fatalf("OpenProject: %v", err)
+		}
+		defer isoProj.Close()
+		isoCat := New(isoProj)
+
+		if _, err := isoCat.Register(KindSkill, "revision-cambios", "1.0.0", skillDir, RegisterOptions{
+			Origin:       "local:ejemplo/skill",
+			Dependencies: []Dependency{{Kind: KindRule, ID: "evidencia-de-pruebas", Version: "1.0.0"}},
+		}); err != nil {
+			t.Fatalf("register skill: %v", err)
+		}
+
+		manifestAbs := filepath.Join(isoRoot, ".gandalf", "sync", "catalog", "skill", "revision-cambios", "1.0.0", "manifest.json")
+		origManifest, err := os.ReadFile(manifestAbs)
+		if err != nil {
+			t.Fatalf("read manifest: %v", err)
+		}
+
+		// 1) Deleting dependencies must trigger integrity_error (canonicalSHA256 covers dependencies).
+		var tampered Entry
+		if err := json.Unmarshal(origManifest, &tampered); err != nil {
+			t.Fatalf("unmarshal manifest: %v", err)
+		}
+		tampered.Dependencies = nil
+		b, err := json.Marshal(tampered)
+		if err != nil {
+			t.Fatalf("marshal tampered: %v", err)
+		}
+		if err := os.WriteFile(manifestAbs, b, 0o644); err != nil {
+			t.Fatalf("write tampered manifest: %v", err)
+		}
+		_, err = isoCat.Resolve(Selection{
+			Targets:    []string{"codex"},
+			Components: []ComponentRef{{Kind: KindSkill, ID: "revision-cambios", Version: "1.0.0"}},
+		})
+		var diagErr *DiagnosticError
+		if !errors.As(err, &diagErr) || len(diagErr.Diagnostics) == 0 || diagErr.Diagnostics[0].Code != "integrity_error" {
+			t.Fatalf("expected integrity_error when dependencies deleted, got %v", err)
+		}
+
+		// 2) Traversal res.Path with matching SHA256 must trigger integrity_error.
+		secretBytes := []byte("SECRET=do-not-read\n")
+		if err := os.WriteFile(filepath.Join(isoRoot, ".env"), secretBytes, 0o644); err != nil {
+			t.Fatalf("write .env: %v", err)
+		}
+		secretSum := sha256.Sum256(secretBytes)
+		trav := Entry{
+			Kind:    KindSkill,
+			ID:      "revision-cambios",
+			Version: "1.0.0",
+			Origin:  "local:ejemplo/skill",
+			Resources: []Resource{{
+				Path:   "../../../../../../.env",
+				SHA256: hex.EncodeToString(secretSum[:]),
+			}},
+		}
+		trav.SHA256 = canonicalSHA256(trav)
+		tb, err := json.Marshal(trav)
+		if err != nil {
+			t.Fatalf("marshal traversal: %v", err)
+		}
+		if err := os.WriteFile(manifestAbs, tb, 0o644); err != nil {
+			t.Fatalf("write traversal manifest: %v", err)
+		}
+		_, err = isoCat.Resolve(Selection{
+			Targets:    []string{"codex"},
+			Components: []ComponentRef{{Kind: KindSkill, ID: "revision-cambios", Version: "1.0.0"}},
+		})
+		diagErr = nil
+		if !errors.As(err, &diagErr) || len(diagErr.Diagnostics) == 0 || diagErr.Diagnostics[0].Code != "integrity_error" {
+			t.Fatalf("expected integrity_error for traversal resource path, got %v", err)
+		}
+
+		// 3) Tampered index.json manifest_path must fail List() with ErrIntegrity.
+		indexAbs := filepath.Join(isoRoot, ".gandalf", "sync", "catalog", "index.json")
+		tamperedIndex := `{"entries":[{"kind":"skill","id":"revision-cambios","version":"1.0.0","manifest_path":".gandalf-sync.json"}]}`
+		if err := os.WriteFile(indexAbs, []byte(tamperedIndex), 0o644); err != nil {
+			t.Fatalf("write tampered index: %v", err)
+		}
+		if _, err := isoCat.List(); !errors.Is(err, ErrIntegrity) {
+			t.Fatalf("expected ErrIntegrity for tampered index manifest_path, got %v", err)
+		}
+	})
+
+	t.Run("observe_errors_not_masked_on_closed_project", func(t *testing.T) {
+		closedRoot := t.TempDir()
+		closedProj, err := syncfs.OpenProject(closedRoot)
+		if err != nil {
+			t.Fatalf("OpenProject: %v", err)
+		}
+		closedCat := New(closedProj)
+		if err := closedProj.Close(); err != nil {
+			t.Fatalf("Close: %v", err)
+		}
+
+		if _, err := LoadSelection(closedProj); !errors.Is(err, fs.ErrClosed) {
+			t.Fatalf("expected fs.ErrClosed from LoadSelection, got %v", err)
+		}
+		if _, err := closedCat.Resolve(Selection{
+			Targets:    []string{"codex"},
+			Components: []ComponentRef{{Kind: KindRule, ID: "evidencia-de-pruebas", Version: "1.0.0"}},
+		}); !errors.Is(err, fs.ErrClosed) {
+			t.Fatalf("expected fs.ErrClosed from Resolve, got %v", err)
 		}
 	})
 }

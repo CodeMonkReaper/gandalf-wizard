@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -36,11 +37,10 @@ const (
 )
 
 var (
-	ErrConflict          = errors.New("catalog entry conflict")
-	ErrInvalidInput      = errors.New("invalid catalog input")
-	ErrNotFound          = errors.New("catalog entry not found")
-	ErrIntegrity         = errors.New("catalog integrity check failed")
-	ErrMissingDependency = errors.New("missing or mismatched dependency")
+	ErrConflict     = errors.New("catalog entry conflict")
+	ErrInvalidInput = errors.New("invalid catalog input")
+	ErrNotFound     = errors.New("catalog entry not found")
+	ErrIntegrity    = errors.New("catalog integrity check failed")
 )
 
 // idVersionPattern accepts a single safe path component: it must start with an
@@ -149,6 +149,23 @@ func validateVersion(version string) error {
 	return validateID(version)
 }
 
+// validateResourcePath ensures a manifest resource path is a clean, relative,
+// forward-slash path confined beneath the entry's files directory.
+func validateResourcePath(p string) error {
+	if p == "" || strings.Contains(p, "\\") || strings.HasPrefix(p, "/") {
+		return fmt.Errorf("%w: invalid resource path %q", ErrIntegrity, p)
+	}
+	if path.Clean(p) != p || !filepath.IsLocal(filepath.FromSlash(p)) {
+		return fmt.Errorf("%w: unsafe resource path %q", ErrIntegrity, p)
+	}
+	for _, seg := range strings.Split(p, "/") {
+		if seg == "" || seg == "." || seg == ".." {
+			return fmt.Errorf("%w: unsafe resource path %q", ErrIntegrity, p)
+		}
+	}
+	return nil
+}
+
 // validateSourceRegular confirms path exists and is a plain regular file with
 // no symlink components anywhere along its way.
 func validateSourceRegular(path string) error {
@@ -234,7 +251,7 @@ func dependenciesEqual(a, b []Dependency) bool {
 }
 
 // canonicalSHA256 derives the immutable identity of an entry from its sorted
-// resources plus its kind, id, version and origin.
+// resources, metadata, and sorted dependencies.
 func canonicalSHA256(e Entry) string {
 	h := sha256.New()
 	for _, res := range e.Resources {
@@ -245,6 +262,27 @@ func canonicalSHA256(e Entry) string {
 	}
 	for _, field := range []string{string(e.Kind), e.ID, e.Version, e.Origin} {
 		h.Write([]byte(field))
+		h.Write([]byte{0})
+	}
+	deps := make([]Dependency, len(e.Dependencies))
+	copy(deps, e.Dependencies)
+	sort.Slice(deps, func(i, j int) bool {
+		if deps[i].Kind != deps[j].Kind {
+			return deps[i].Kind < deps[j].Kind
+		}
+		if deps[i].ID != deps[j].ID {
+			return deps[i].ID < deps[j].ID
+		}
+		return deps[i].Version < deps[j].Version
+	})
+	h.Write([]byte("deps"))
+	h.Write([]byte{0})
+	for _, dep := range deps {
+		h.Write([]byte(string(dep.Kind)))
+		h.Write([]byte{0})
+		h.Write([]byte(dep.ID))
+		h.Write([]byte{0})
+		h.Write([]byte(dep.Version))
 		h.Write([]byte{0})
 	}
 	return hex.EncodeToString(h.Sum(nil))
@@ -315,7 +353,18 @@ func (c *Catalog) Register(kind ComponentKind, id, version, source string, opts 
 	}
 
 	deps := make([]Dependency, len(opts.Dependencies))
-	copy(deps, opts.Dependencies)
+	for i, dep := range opts.Dependencies {
+		if err := validateKind(dep.Kind); err != nil {
+			return Entry{}, err
+		}
+		if err := validateID(dep.ID); err != nil {
+			return Entry{}, err
+		}
+		if err := validateVersion(dep.Version); err != nil {
+			return Entry{}, err
+		}
+		deps[i] = dep
+	}
 	sort.Slice(deps, func(i, j int) bool {
 		if deps[i].Kind != deps[j].Kind {
 			return deps[i].Kind < deps[j].Kind
@@ -493,16 +542,23 @@ func (c *Catalog) List() ([]Entry, error) {
 		if err := validateVersion(rec.Version); err != nil {
 			return nil, err
 		}
-		manifestState, err := c.project.Observe(rec.ManifestPath)
+		expectedManifest := c.manifestPath(rec.Kind, rec.ID, rec.Version)
+		if rec.ManifestPath != expectedManifest {
+			return nil, fmt.Errorf("%w: index manifest path mismatch for %s %s %s", ErrIntegrity, rec.Kind, rec.ID, rec.Version)
+		}
+		manifestState, err := c.project.Observe(expectedManifest)
 		if err != nil {
 			return nil, err
 		}
 		if !manifestState.Exists {
-			return nil, fmt.Errorf("%w: index references missing manifest %q", ErrIntegrity, rec.ManifestPath)
+			return nil, fmt.Errorf("%w: index references missing manifest %q", ErrIntegrity, expectedManifest)
 		}
 		var entry Entry
 		if err := json.Unmarshal(manifestState.Bytes, &entry); err != nil {
-			return nil, fmt.Errorf("%w: corrupt manifest at %q", ErrIntegrity, rec.ManifestPath)
+			return nil, fmt.Errorf("%w: corrupt manifest at %q", ErrIntegrity, expectedManifest)
+		}
+		if entry.Kind != rec.Kind || entry.ID != rec.ID || entry.Version != rec.Version {
+			return nil, fmt.Errorf("%w: manifest identity mismatch at %q", ErrIntegrity, expectedManifest)
 		}
 		entries = append(entries, entry)
 	}
@@ -522,7 +578,7 @@ func (c *Catalog) List() ([]Entry, error) {
 func LoadSelection(project *syncfs.ScopedProject) (Selection, error) {
 	state, err := project.Observe(SelectionFile)
 	if err != nil {
-		return Selection{}, fmt.Errorf("%w: %s unavailable", ErrNotFound, SelectionFile)
+		return Selection{}, fmt.Errorf("observe %s: %w", SelectionFile, err)
 	}
 	if !state.Exists {
 		return Selection{}, ErrNotFound
@@ -544,13 +600,15 @@ func LoadSelection(project *syncfs.ScopedProject) (Selection, error) {
 }
 
 // validateSelection checks that every target is non-empty and every component
-// reference names a known kind with a safe id and version.
+// reference names a known kind with a safe id and version, without duplicate
+// (kind, id) entries.
 func validateSelection(sel Selection) error {
 	for _, target := range sel.Targets {
 		if strings.TrimSpace(target) == "" {
 			return fmt.Errorf("%w: empty target", ErrInvalidInput)
 		}
 	}
+	seen := make(map[string]struct{}, len(sel.Components))
 	for _, ref := range sel.Components {
 		if err := validateKind(ref.Kind); err != nil {
 			return err
@@ -561,6 +619,11 @@ func validateSelection(sel Selection) error {
 		if err := validateVersion(ref.Version); err != nil {
 			return err
 		}
+		key := string(ref.Kind) + "/" + ref.ID
+		if _, dup := seen[key]; dup {
+			return fmt.Errorf("%w: duplicate component %s %s in selection", ErrInvalidInput, ref.Kind, ref.ID)
+		}
+		seen[key] = struct{}{}
 	}
 	return nil
 }
@@ -568,6 +631,9 @@ func validateSelection(sel Selection) error {
 // Resolve validates the selection and returns the fixed catalog entries with
 // bytes loaded from the project blobs.
 func (c *Catalog) Resolve(selection Selection) ([]Entry, error) {
+	if err := validateSelection(selection); err != nil {
+		return nil, err
+	}
 	if len(selection.Components) == 0 {
 		return []Entry{}, nil
 	}
@@ -623,13 +689,7 @@ func (c *Catalog) loadComponent(ref ComponentRef) (*Entry, *Diagnostic, error) {
 	manifestPath := c.manifestPath(ref.Kind, ref.ID, ref.Version)
 	state, err := c.project.Observe(manifestPath)
 	if err != nil {
-		return nil, &Diagnostic{
-			Code:    "missing_component",
-			Kind:    ref.Kind,
-			ID:      ref.ID,
-			Version: ref.Version,
-			Message: fmt.Sprintf("component %s %s %s is not registered", ref.Kind, ref.ID, ref.Version),
-		}, nil
+		return nil, nil, fmt.Errorf("observe manifest %s %s %s: %w", ref.Kind, ref.ID, ref.Version, err)
 	}
 	if !state.Exists {
 		return nil, &Diagnostic{
@@ -650,13 +710,34 @@ func (c *Catalog) loadComponent(ref ComponentRef) (*Entry, *Diagnostic, error) {
 			Message: fmt.Sprintf("corrupt manifest for %s %s %s", ref.Kind, ref.ID, ref.Version),
 		}, nil
 	}
+	if entry.Kind != ref.Kind || entry.ID != ref.ID || entry.Version != ref.Version {
+		return nil, &Diagnostic{
+			Code:    "integrity_error",
+			Kind:    ref.Kind,
+			ID:      ref.ID,
+			Version: ref.Version,
+			Message: fmt.Sprintf("manifest identity mismatch for %s %s %s", ref.Kind, ref.ID, ref.Version),
+		}, nil
+	}
 
 	recomputed := entry
 	recomputed.Resources = make([]Resource, 0, len(entry.Resources))
 	for _, res := range entry.Resources {
+		if err := validateResourcePath(res.Path); err != nil {
+			return nil, &Diagnostic{
+				Code:    "integrity_error",
+				Kind:    ref.Kind,
+				ID:      ref.ID,
+				Version: ref.Version,
+				Message: fmt.Sprintf("unsafe resource path %q", res.Path),
+			}, nil
+		}
 		blobPath := c.blobPath(ref.Kind, ref.ID, ref.Version, res.Path)
 		blobState, err := c.project.Observe(blobPath)
-		if err != nil || !blobState.Exists {
+		if err != nil {
+			return nil, nil, fmt.Errorf("observe blob %q: %w", res.Path, err)
+		}
+		if !blobState.Exists {
 			return nil, &Diagnostic{
 				Code:    "integrity_error",
 				Kind:    ref.Kind,
