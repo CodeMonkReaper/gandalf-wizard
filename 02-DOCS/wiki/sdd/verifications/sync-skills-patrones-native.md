@@ -43,3 +43,16 @@ La ejecución inicial falló en las aserciones de descubrimiento y precedencia c
 Cada sesión usa archivos sintéticos, un perfil temporal y un entorno definido por lista de variables. El proveedor escucha únicamente en la interfaz local y rechaza peticiones con cabeceras de autenticación. Cada CLI recibe un proxy HTTP(S) local que devuelve error y carece de reenvío. En las primeras corridas, el proxy registró tres denegaciones por sesión de Vibe. La revisión del código instalado mostró que Vibe 3.1.2 podía consultar el almacén de credenciales del sistema durante el inicio, aun con un perfil temporal. La prueba fija VIBE_TEST_DISABLE_KEYRING=1 antes de lanzar Vibe. Tras añadir el bloqueo, pasaron los seis casos y el proxy registró cero intentos auxiliares en ambos destinos. La ejecución inicial carece de evidencia sobre acceso efectivo al almacén. La evidencia conserva los contadores y las huellas. Las peticiones y respuestas quedan dentro de la ejecución de la prueba. El aislamiento de red se basa en la configuración de los procesos y el proxy, sin una verificación de firewall del sistema operativo.
 
 La skill se observa por su descripción inequívoca en el contexto del modelo. La comprobación del recurso declarativo registra su huella en disco. T008 verificará los dos destinos después de aplicar la selección mediante Gandalf, junto con la repetición y restauración.
+
+## Aceptación de extremo a extremo (T008 · 2026-11-19)
+
+**T008 · PASS el 19 de noviembre de 2026.** Se ejecutaron `TestSyncAcceptance` (`internal/cli`) y `TestSyncNativeAcceptance` (`internal/syncnative`, con `GANDALF_SYNC_NATIVE_TEST=1`) aplicando el ejemplo de referencia (`revision-cambios@1.0.0`, `evidencia-de-pruebas@1.0.0` y `revision-por-pares@1.0.0`) mediante la CLI de Gandalf sobre dos copias temporales independientes (`copyA` y `copyB`).
+
+- **Convergencia (`copyA == copyB`):**
+  - `.agents/skills/revision-cambios/SKILL.md`: `84e9ae63a8dc96fe8f7974bee44c6b2d4f77aa4eb5005b3242064bf952701cc9`
+  - `.agents/skills/revision-cambios/references/checklist.md`: `db415feb86c5566a507f0620074d98b7e2f05ff9532e984a6cc00b13e2914edf`
+  - `AGENTS.md`: `7f5b38c4fb8d33c0e7fe36e8d4174fd27b08e9864f130a0e3740731ca42a4f9a`
+- **Descubrimiento nativo tras `sync apply` y ausencia tras `sync restore`:**
+  - **Codex CLI `0.169.0`** (`windows/amd64`): **PASS** tras aplicar y tras restaurar (`proxy_denials=0`).
+  - **Vibe CLI `3.1.3`** (`windows/amd64`): **PASS** tras aplicar y tras restaurar (`proxy_denials=0`).
+- **Privacidad y recuperación:** `TestSyncAcceptance` verificó además fuente mutada tras registro (`AC-01`), vista previa de solo lectura (`AC-02`), repetición `noop` (`AC-04`), restauración de alta y actualización (`AC-06`), conflicto por edición posterior + reconciliación (`AC-07`) y ausencia del marcador de secreto en `stdout`/`stderr` (`AC-08`).

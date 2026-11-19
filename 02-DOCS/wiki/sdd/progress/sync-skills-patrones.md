@@ -171,3 +171,17 @@ slug: sync-skills-patrones
   - **Estado**: completo. Nivel de revisión 1 (`rsc risk --base 8d4a467 --json`: tier 1, 1 revisor, sin aprobación humana).
   - **Revisión**: ronda 1 (`8755746`, revisor en contexto fresco) → 1 hallazgo `should-fix` (`L27`: preservar `view_id`, `operation_id`, `changes` y `diagnostics` en salidas de error JSON de `apply`/`restore`; `changes-needed`). Corregido con subtest de regresión en `79dc165` y marcado `fixed` en el ledger. Ronda 2 (`79dc165`, revisor en contexto fresco) → `VERDICT: pass` (0 hallazgos).
   - **Controles ejecutados**: `gofmt -l internal/cli/run.go internal/cli/sync.go internal/cli/sync_test.go` (limpio), `go vet ./...` (ok), `go build ./...` (ok), compilación cruzada `GOOS=linux GOARCH=amd64 go build ./...` (ok), `go test -count=1 -v ./internal/cli -run '^TestSyncCLI$'` (5/5 PASS), `go test -count=1 ./...` (15/15 paquetes en verde). Trazabilidad AC-01, AC-02, AC-04, AC-06, AC-08, AC-09.
+
+## T008 · 2026-11-19
+
+- **Tarea / Issue**: T008 / [#36](https://github.com/CodeMonkReaper/gandalf-wizard/issues/36) — verificar portabilidad y recuperación de extremo a extremo (`TestSyncAcceptance` y `TestSyncNativeAcceptance`).
+- **Delegación a Vibe (intento 1)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t008-acceptance` · tier `balanced` (perfil `developer`) · solicitado/efectivo `deepseek-v4-1-flash-1017`.
+  - **Run ID / Estado**: `1a623564-cdb7-4a2d-af42-0206ff1a7ae7` · `DONE_WITH_CONCERNS` (exit 0, 25.1 s; worker sin shell).
+  - **Trabajo realizado por Vibe**: creó [sync_acceptance_test.go](../../../../internal/cli/sync_acceptance_test.go) y [acceptance_test.go](../../../../internal/syncnative/acceptance_test.go).
+  - **Verificación y ajustes del coordinador**: eliminó `schema_version` de `.gandalf-sync.json`, ajustó aserciones de `changes` omitido y `diagnostics` en `restore_conflict`, fijó la detección de Vibe `3.1.3` y acortó el `TempDir` de perfil en `capture_test.go` para evitar `MAX_PATH` en Windows.
+- **Evidencia ejecutada**:
+  - `go test -count=1 -v ./internal/cli -run '^TestSyncAcceptance$'` — **PASS** (`0.75 s`).
+  - `GANDALF_SYNC_NATIVE_TEST=1 go test -count=1 -v ./internal/syncnative -run '^TestSyncNativeAcceptance$'` — **PASS** (`12.74 s`, Codex `0.169.0` + Vibe `3.1.3`, `proxy_denials=0`).
+  - Evidencia registrada en [sync-skills-patrones-native.md](../verifications/sync-skills-patrones-native.md). Trazabilidad AC-01 a AC-08.

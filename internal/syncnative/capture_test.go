@@ -32,7 +32,11 @@ type nativeObservation struct {
 
 func captureProbe(t *testing.T, target, version, project string) nativeObservation {
 	t.Helper()
-	home := t.TempDir()
+	home, err := os.MkdirTemp("", "g")
+	if err != nil {
+		t.Fatalf("create temp home: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(home) })
 	profile := filepath.Join(home, target)
 	bin := nativeBinary(t, target)
 
