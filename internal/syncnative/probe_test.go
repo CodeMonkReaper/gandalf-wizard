@@ -121,3 +121,17 @@ func requireText(t *testing.T, artifact, observed, present, absent string) {
 		t.Fatalf("unexpected %s present in native context", artifact)
 	}
 }
+
+func TestVibeProbeEnvironmentDisablesKeyring(t *testing.T) {
+	t.Setenv("VIBE_TEST_DISABLE_KEYRING", "0")
+	env := nativeEnvironment(t.TempDir(), t.TempDir(), "vibe", "http://127.0.0.1:1")
+	var guards []string
+	for _, entry := range env {
+		if strings.HasPrefix(entry, "VIBE_TEST_DISABLE_KEYRING=") {
+			guards = append(guards, entry)
+		}
+	}
+	if len(guards) != 1 || guards[0] != "VIBE_TEST_DISABLE_KEYRING=1" {
+		t.Fatalf("expected one effective keyring guard, got %v", guards)
+	}
+}

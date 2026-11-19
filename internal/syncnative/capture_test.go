@@ -162,6 +162,11 @@ func nativeEnvironment(home, profile, target, proxy string) []string {
 		"NO_PROXY=127.0.0.1", "GIT_CONFIG_NOSYSTEM=1", "GIT_TERMINAL_PROMPT=0",
 		strings.ToUpper(target) + "_HOME=" + profile,
 	}
+	if target == "vibe" {
+		// Vibe 3.1.2 can resolve auxiliary Mistral credentials through the
+		// system keyring even with a temporary home and a local model.
+		env = append(env, "VIBE_TEST_DISABLE_KEYRING=1")
+	}
 	for _, key := range []string{"PATH", "PATHEXT", "SystemRoot", "WINDIR", "COMSPEC", "OS", "PROGRAMFILES", "PROGRAMFILES(X86)"} {
 		if value, ok := os.LookupEnv(key); ok {
 			env = append(env, key+"="+value)
