@@ -83,3 +83,32 @@ slug: sync-skills-patrones
   - **Estado**: completo. Nivel de revisión 1 (`rsc risk --base 8aa4f5c --json`: tier 1, 1 revisor, sin aprobación humana).
   - **Revisión**: ronda 1 (`3abc7d5`, revisor en contexto fresco) → 6 hallazgos (`L9`–`L14`: 2 blocker, 3 should-fix, 1 nit; `changes-needed`). Todos corregidos con pruebas de regresión en `af9c828` y marcados `fixed` en el ledger. Ronda 2 (`af9c828`, revisor en contexto fresco) → `VERDICT: pass` (0 hallazgos).
   - **Controles ejecutados**: `gofmt -l internal/synccatalog` (limpio), `go vet ./...` (ok), `go build ./...` (ok), `go test -count=1 -v ./internal/synccatalog -run '^TestSyncCatalog$'` (12/12 PASS), `go test -count=1 ./...` (14/14 paquetes en verde). Trazabilidad AC-01, AC-02, AC-05.
+
+## T004 · 2026-11-19
+
+- **Tarea / Issue**: T004 / [#32](https://github.com/CodeMonkReaper/gandalf-wizard/issues/32) — calcular vista previa y proyección sin escribir en `internal/projectsync`.
+- **Estado previo (RED)**: el coordinador creó el stub [preview.go](../../../../internal/projectsync/preview.go) y el test inicial [preview_test.go](../../../../internal/projectsync/preview_test.go). Ejecutó `go test -count=1 -v ./internal/projectsync -run '^TestSyncPreview$'` y confirmó el fallo esperado (`not implemented` en 4/4 subtests).
+- **Delegación a Vibe (intento 1)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t004-preview` · tier `balanced` · solicitado/efectivo `mistral-large-4`.
+  - **Run ID / Estado**: `a3cdd524-1cb2-415e-9a41-0da129142ff5` · `BLOCKED` (exit 1, 7.9 s).
+  - **Motivo**: la sesión hija no heredó la variable `MISTRAL_API_KEY` recién definida y Vibe usó una clave antigua del keyring.
+  - **Trabajo realizado por Vibe**: ninguno.
+  - **Siguiente paso**: reintento `sync-t004-preview-r2` cargando `MISTRAL_API_KEY` desde el entorno de usuario de Windows.
+- **Delegación a Vibe (intento 2)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t004-preview-r2` · tier `balanced` · solicitado/efectivo `mistral-large-4`.
+  - **Run ID / Estado**: `d4d37f0f-555e-4ccf-8ef6-bdd22c8ebea8` · `BLOCKED` (exit 2, 7.0 s).
+  - **Motivo**: `MISTRAL_API_KEY` en el entorno de usuario contiene un salto de línea final (`\n`); `vibe` lo rechaza en la cabecera HTTP (`Illegal header value`).
+  - **Trabajo realizado por Vibe**: ninguno.
+  - **Siguiente paso**: limpiar el salto de línea final de `MISTRAL_API_KEY` (y considerar rotar la clave si procede, ya que `vibe` registró la cabecera inválida en su `stderr.log` local) antes de reintentar T004 con Vibe.
+- **Delegación a Vibe (intento 3, tras limpiar `MISTRAL_API_KEY` y borrar `stderr.log` anterior)**:
+  - **Fecha**: 2026-11-19
+  - **Task ID / Tier / Modelo**: `sync-t004-preview-r3` · tier `balanced` (perfil `developer`) · solicitado/efectivo `mistral-large-4`.
+  - **Run ID / Estado**: `ac4c6356-bda0-4ad6-9783-fdb1700611a2` · `DONE_WITH_CONCERNS` (exit 0, 157.2 s; worker sin shell).
+  - **Trabajo realizado por Vibe**: implementó [preview.go](../../../../internal/projectsync/preview.go) y añadió 4 subpruebas de borde en [preview_test.go](../../../../internal/projectsync/preview_test.go).
+  - **Verificación y ajustes del coordinador**: ajustó el mapeo de `synccatalog.Diagnostic` (`Code`/`Message`), el salto de línea al reemplazar `[BlockStart..BlockEnd]` en `AGENTS.md` y el setup de dos subpruebas (`d718fee`).
+- **Cierre y revisión de T004**:
+  - **Estado**: completo. Nivel de revisión 1 (`rsc risk --base ede5c25 --json`: tier 1, 1 revisor, sin aprobación humana).
+  - **Revisión**: ronda 1 (`d718fee`, revisor en contexto fresco) → 4 hallazgos `should-fix` (`L15`–`L18`, 0 blocker; `changes-needed`). Todos corregidos con pruebas de regresión en `6a38ffa` y marcados `fixed` en el ledger. Ronda 2 (`6a38ffa`, revisor en contexto fresco) → `VERDICT: pass` (0 hallazgos).
+  - **Controles ejecutados**: `gofmt -l internal/projectsync` (limpio), `go vet ./...` (ok), `go build ./...` (ok), `go test -count=1 -v ./internal/projectsync -run '^TestSyncPreview$'` (9/9 PASS), `go test -count=1 ./...` (15/15 paquetes en verde). Trazabilidad AC-02, AC-03, AC-04, AC-05.
