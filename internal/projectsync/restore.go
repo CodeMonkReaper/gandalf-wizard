@@ -96,6 +96,23 @@ func Restore(project *syncfs.ScopedProject, operationID string, opts RestoreOpti
 	if op.Phase == PhaseRestored {
 		return RestoreResult{Status: StatusNoOp, ProjectID: project.ID(), OperationID: operationID}, nil
 	}
+	pending, err := PendingRecovery(project)
+	if err != nil {
+		return RestoreResult{
+			Status:      StatusRejected,
+			Reason:      err.Error(),
+			ProjectID:   project.ID(),
+			OperationID: operationID,
+		}, err
+	}
+	if pending != nil && pending.ID != operationID {
+		return RestoreResult{
+			Status:      StatusRecoveryPending,
+			Reason:      fmt.Sprintf("another operation (%s) is pending recovery", pending.ID),
+			ProjectID:   project.ID(),
+			OperationID: pending.ID,
+		}, ErrRecoveryPending
+	}
 
 	plans, diags, err := planRestore(project, op)
 	if err != nil {
@@ -157,14 +174,15 @@ func Restore(project *syncfs.ScopedProject, operationID string, opts RestoreOpti
 		entry := op.Entries[item.index]
 
 		if !item.needsWrite {
-			// Already at its pre-operation state: bookkeeping only.
-			op.Entries[item.index].State = EntryRestored
-			if err := persistOperation(project, lease, op); err != nil {
-				return interrupted("restore state persist failed", err)
-			}
+			// Already at its pre-operation state: persist receipts before marking EntryRestored
+			// so a crash between the two cannot leave stale receipts on retry.
 			receipts = receiptsAfterRestore(receipts, entry, item.beforeBytes)
 			if err := persistReceipts(project, lease, receipts); err != nil {
 				return interrupted("restore receipts persist failed", err)
+			}
+			op.Entries[item.index].State = EntryRestored
+			if err := persistOperation(project, lease, op); err != nil {
+				return interrupted("restore state persist failed", err)
 			}
 			continue
 		}
@@ -177,13 +195,13 @@ func Restore(project *syncfs.ScopedProject, operationID string, opts RestoreOpti
 		if _, err := project.Change(lease, entry.Path, item.cur, item.desired); err != nil {
 			return interrupted("restore write failed", err)
 		}
-		op.Entries[item.index].State = EntryRestored
-		if err := persistOperation(project, lease, op); err != nil {
-			return interrupted("restore state persist failed", err)
-		}
 		receipts = receiptsAfterRestore(receipts, entry, item.beforeBytes)
 		if err := persistReceipts(project, lease, receipts); err != nil {
 			return interrupted("restore receipts persist failed", err)
+		}
+		op.Entries[item.index].State = EntryRestored
+		if err := persistOperation(project, lease, op); err != nil {
+			return interrupted("restore state persist failed", err)
 		}
 		summaries = append(summaries, ChangeSummary{
 			Path:         entry.Path,
@@ -295,10 +313,10 @@ func matchesAfterState(entry OperationEntry, cur syncfs.FileState) bool {
 }
 
 // receiptsAfterRestore updates receipts for a restored entry: a pre-operation file that
-// carried a Gandalf block keeps a receipt pinned to its restored hash; every other entry
-// loses its receipt.
+// was owned by Gandalf (or carried a managed Gandalf block) keeps a receipt pinned to
+// its restored hash; every other entry loses its receipt.
 func receiptsAfterRestore(receipts []Receipt, entry OperationEntry, beforeBytes []byte) []Receipt {
-	if entry.BeforeExists && bytes.Contains(beforeBytes, []byte(BlockStart)) && bytes.Contains(beforeBytes, []byte(BlockEnd)) {
+	if entry.BeforeExists && (entry.BeforeOwned || (bytes.Contains(beforeBytes, []byte(BlockStart)) && bytes.Contains(beforeBytes, []byte(BlockEnd)))) {
 		return upsertReceipt(receipts, Receipt{Path: entry.Path, Owner: OwnerGandalf, AfterSHA256: entry.BeforeSHA256})
 	}
 	return removeReceipt(receipts, entry.Path)

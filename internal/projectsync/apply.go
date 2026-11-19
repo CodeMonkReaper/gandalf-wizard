@@ -66,6 +66,7 @@ type OperationEntry struct {
 	Action       string   `json:"action"`
 	Targets      []string `json:"targets"`
 	BeforeExists bool     `json:"before_exists"`
+	BeforeOwned  bool     `json:"before_owned,omitempty"`
 	BeforeSHA256 string   `json:"before_sha256,omitempty"`
 	BeforeFileID string   `json:"before_file_id,omitempty"`
 	BackupPath   string   `json:"backup_path,omitempty"`
@@ -425,6 +426,13 @@ func Apply(
 		}, nil
 	}
 
+	receiptByPath := make(map[string]Receipt, len(receipts))
+	for _, r := range receipts {
+		if r.Owner == OwnerGandalf {
+			receiptByPath[r.Path] = r
+		}
+	}
+
 	summaries := make([]ChangeSummary, 0, len(view.Changes))
 	entries := make([]OperationEntry, 0, len(view.Changes))
 	for i, ch := range view.Changes {
@@ -437,11 +445,14 @@ func Apply(
 			BeforeSHA256: ch.Before.SHA256,
 			AfterSHA256:  ch.After.SHA256,
 		})
+		priorReceipt, hasPriorReceipt := receiptByPath[ch.Path]
+		beforeOwned := ch.Before.Exists && hasPriorReceipt && priorReceipt.AfterSHA256 == ch.Before.SHA256
 		entry := OperationEntry{
 			Path:         ch.Path,
 			Action:       ch.Action,
 			Targets:      targets,
 			BeforeExists: ch.Before.Exists,
+			BeforeOwned:  beforeOwned,
 			BeforeSHA256: ch.Before.SHA256,
 			BeforeFileID: ch.Before.FileID,
 			AfterExists:  ch.After.Exists,

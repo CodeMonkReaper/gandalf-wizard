@@ -322,4 +322,113 @@ func TestSyncRestore(t *testing.T) {
 			t.Fatalf("busy restore mutated SKILL.md: %v", err)
 		}
 	})
+
+	t.Run("skill_update_restore_preserves_receipt_for_subsequent_preview_and_apply", func(t *testing.T) {
+		root, proj, cat, _ := newAppliedProject(t)
+
+		// Register skill v2.0.0 and apply an update over the v1.0.0 skill.
+		skillV2Dir := filepath.Join(t.TempDir(), "revision-cambios-v2")
+		if err := os.MkdirAll(filepath.Join(skillV2Dir, "references"), 0o755); err != nil {
+			t.Fatalf("mkdir skill v2: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(skillV2Dir, "SKILL.md"), []byte("# Revision v2\n"), 0o644); err != nil {
+			t.Fatalf("write SKILL.md v2: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(skillV2Dir, "references", "checklist.md"), []byte("Checklist v2\n"), 0o644); err != nil {
+			t.Fatalf("write checklist v2: %v", err)
+		}
+		if _, err := cat.Register(synccatalog.KindSkill, "revision-cambios", "2.0.0", skillV2Dir, synccatalog.RegisterOptions{
+			Origin:       "local:skill-v2",
+			Dependencies: []synccatalog.Dependency{{Kind: synccatalog.KindRule, ID: "evidencia-de-pruebas", Version: "1.0.0"}},
+		}); err != nil {
+			t.Fatalf("register skill v2: %v", err)
+		}
+		selV2 := synccatalog.Selection{
+			Targets: []string{"codex", "vibe"},
+			Components: []synccatalog.ComponentRef{
+				{Kind: synccatalog.KindSkill, ID: "revision-cambios", Version: "2.0.0"},
+				{Kind: synccatalog.KindRule, ID: "evidencia-de-pruebas", Version: "1.0.0"},
+				{Kind: synccatalog.KindPattern, ID: "revision-por-pares", Version: "1.0.0"},
+			},
+		}
+		receipts, err := LoadReceipts(proj)
+		if err != nil {
+			t.Fatalf("LoadReceipts: %v", err)
+		}
+		v2, err := Preview(proj, cat, selV2, profiles, receipts)
+		if err != nil || !v2.Applicable() || len(v2.Changes) != 2 {
+			t.Fatalf("Preview v2: err=%v applicable=%v changes=%d diags=%+v", err, v2.Applicable(), len(v2.Changes), v2.Diagnostics)
+		}
+		op2Res, err := Apply(proj, cat, selV2, profiles, v2.ID, ApplyOptions{})
+		if err != nil || op2Res.Status != StatusApplied {
+			t.Fatalf("Apply v2: err=%v res=%+v", err, op2Res)
+		}
+
+		// Restore op2 back to v1.0.0 bytes -> skill ownership receipts must remain pinned to v1.0.0.
+		restRes, err := Restore(proj, op2Res.OperationID, RestoreOptions{})
+		if err != nil || restRes.Status != StatusRestored {
+			t.Fatalf("Restore op2: err=%v res=%+v", err, restRes)
+		}
+		gotSkill, err := os.ReadFile(filepath.Join(root, ".agents", "skills", "revision-cambios", "SKILL.md"))
+		if err != nil || !strings.Contains(string(gotSkill), "# Revision\n") {
+			t.Fatalf("SKILL.md not restored to v1.0.0: err=%v got=%q", err, string(gotSkill))
+		}
+		receiptsAfter, err := LoadReceipts(proj)
+		if err != nil {
+			t.Fatalf("LoadReceipts after restore: %v", err)
+		}
+		// Previewing v1.0.0 must be applicable with 0 changes (no ownership_conflict).
+		v1Check, err := Preview(proj, cat, sel, profiles, receiptsAfter)
+		if err != nil || !v1Check.Applicable() || len(v1Check.Changes) != 0 {
+			t.Fatalf("expected 0-change applicable preview after restoring skill update, err=%v v=%+v", err, v1Check)
+		}
+		// Re-applying v2.0.0 must also succeed without ownership_conflict.
+		v2Again, err := Preview(proj, cat, selV2, profiles, receiptsAfter)
+		if err != nil || !v2Again.Applicable() || len(v2Again.Changes) != 2 {
+			t.Fatalf("expected applicable v2 preview after restoring skill update, err=%v v=%+v", err, v2Again)
+		}
+		op3Res, err := Apply(proj, cat, selV2, profiles, v2Again.ID, ApplyOptions{})
+		if err != nil || op3Res.Status != StatusApplied {
+			t.Fatalf("re-Apply v2 after restore: err=%v res=%+v", err, op3Res)
+		}
+	})
+
+	t.Run("restore_blocked_when_different_operation_is_pending_recovery", func(t *testing.T) {
+		_, proj, cat, op1ID := newAppliedProject(t)
+
+		// Start a second operation (rule v2.0.0) and interrupt it so pending.json points to op2.
+		ruleV2Path := filepath.Join(t.TempDir(), "rule-v2.md")
+		if err := os.WriteFile(ruleV2Path, []byte("Regla v2.\n"), 0o644); err != nil {
+			t.Fatalf("write rule v2: %v", err)
+		}
+		if _, err := cat.Register(synccatalog.KindRule, "evidencia-de-pruebas", "2.0.0", ruleV2Path, synccatalog.RegisterOptions{Origin: "local:rule-v2"}); err != nil {
+			t.Fatalf("register rule v2: %v", err)
+		}
+		receipts, _ := LoadReceipts(proj)
+		selV2 := synccatalog.Selection{
+			Targets:    []string{"codex", "vibe"},
+			Components: []synccatalog.ComponentRef{{Kind: synccatalog.KindRule, ID: "evidencia-de-pruebas", Version: "2.0.0"}},
+		}
+		v2, err := Preview(proj, cat, selV2, profiles, receipts)
+		if err != nil || !v2.Applicable() {
+			t.Fatalf("Preview v2: err=%v v=%+v", err, v2)
+		}
+		op2Res, err := Apply(proj, cat, selV2, profiles, v2.ID, ApplyOptions{
+			AfterWrite: func(p string) error { return errors.New("crash mid op2") },
+		})
+		if err == nil || op2Res.Status != StatusRecoveryPending {
+			t.Fatalf("expected interrupted op2, err=%v res=%+v", err, op2Res)
+		}
+
+		// Attempting to restore op1 while op2 is pending recovery must fail with ErrRecoveryPending
+		// and preserve pending.json pointing to op2.
+		res, err := Restore(proj, op1ID, RestoreOptions{})
+		if !errors.Is(err, ErrRecoveryPending) || res.Status != StatusRecoveryPending || res.OperationID != op2Res.OperationID {
+			t.Fatalf("expected ErrRecoveryPending referencing op2 (%s), got err=%v res=%+v", op2Res.OperationID, err, res)
+		}
+		pending, err := PendingRecovery(proj)
+		if err != nil || pending == nil || pending.ID != op2Res.OperationID {
+			t.Fatalf("pending.json was clobbered: err=%v pending=%+v", err, pending)
+		}
+	})
 }
