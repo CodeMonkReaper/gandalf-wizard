@@ -265,7 +265,7 @@ Las restricciones globales de §0 aplican implícitamente a todas las tareas. No
 | Líneas modificadas | 1.800–2.800 | Cuatro paquetes nuevos (`schema`, `gates`, `store`, `engine`), CLI/render y aceptación E2E + multiproceso |
 | Archivos | 24–30 | Lotes de 2–5 archivos por tarea (dimensionados para delegación en Mistral Vibe de 6 turnos) |
 | Riesgo | 8 tareas `tier 1`, 1 documental `tier 0` | Clasificación calculada con `rsc risk --json` contra `origin/master` para las nueve tareas; `implement` recalculará sobre el diff real |
-| Entrega | `ask-on-risk` | Supera el presupuesto base (`400` líneas / `12` archivos en `config.yaml`). Cortes naturales de revisión intermedia: Corte 1 (`T001`–`T003` base), Corte 2 (`T004`–`T005` motor) y Corte 3 (`T006`–`T009` CLI + E2E + cierre) |
+| Entrega | `ask-on-risk` — **PRs separados por corte** | Supera el presupuesto base (`400` líneas / `12` archivos en `config.yaml`). Confirmado por el propietario: **PRs separados por corte**: Corte 1 (`T001`–`T003`, `#43`–`#45`), Corte 2 (`T004`–`T005`, `#46`–`#47`) y Corte 3 (`T006`–`T009`, `#48`–`#51` + cierre de `#40`) |
 
 `T002` (`internal/workflow/gates`) y `T003` (`internal/workflow/store`) comparten cero archivos y cero estado; pueden ejecutarse en paralelo en cuanto concluya `T001`.
 
