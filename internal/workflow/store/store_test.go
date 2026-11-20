@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -190,12 +191,16 @@ func TestWorkflowStore(t *testing.T) {
 			t.Fatalf("LoadRun(run junction) = %v, want ErrUnsafePath", err)
 		}
 
-		// MAX_PATH protection: build a deep projectRoot within TempDir (< 240 chars) where artifact path > MaxSafePathLen.
+		// MAX_PATH protection: build a deep projectRoot (bounded <= 185 chars so CreateRun succeeds) where artifact path > MaxSafePathLen.
 		baseDeep := t.TempDir()
-		seg := strings.Repeat("d", 36)
 		deepRoot := baseDeep
-		for len(deepRoot) < 175 {
-			deepRoot = filepath.Join(deepRoot, seg)
+		const maxDeepRoot = 185
+		for len(deepRoot) < 175 && len(deepRoot)+4 < maxDeepRoot {
+			padLen := min(36, maxDeepRoot-len(deepRoot)-1)
+			if padLen < 1 {
+				break
+			}
+			deepRoot = filepath.Join(deepRoot, strings.Repeat("d", padLen))
 		}
 		if err := os.MkdirAll(deepRoot, 0o700); err != nil {
 			t.Fatalf("mkdir deepRoot: %v", err)
@@ -211,6 +216,37 @@ func TestWorkflowStore(t *testing.T) {
 		}
 		if _, err := deepStore.SaveArtifact(deepRunID, "sintesis", 1, strings.Repeat("a", 40), "payload"); !errors.Is(err, ErrUnsafePath) {
 			t.Fatalf("SaveArtifact exceeding MAX_PATH got %v, want ErrUnsafePath", err)
+		}
+	})
+
+	t.Run("apertura_concurrente_openroot", func(t *testing.T) {
+		for round := 0; round < 15; round++ {
+			freshRoot := t.TempDir()
+			const workers = 12
+			start := make(chan struct{})
+			errs := make(chan error, workers)
+			var wg sync.WaitGroup
+			for w := 0; w < workers; w++ {
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					<-start
+					st, err := OpenRoot(freshRoot)
+					if err != nil {
+						errs <- err
+						return
+					}
+					if closeErr := st.Close(); closeErr != nil {
+						errs <- closeErr
+					}
+				}()
+			}
+			close(start)
+			wg.Wait()
+			close(errs)
+			for err := range errs {
+				t.Fatalf("round %d concurrent OpenRoot failed: %v", round, err)
+			}
 		}
 	})
 

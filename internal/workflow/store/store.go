@@ -236,7 +236,7 @@ func ensureSafeDir(root *os.Root, basePath, rel string) error {
 	info, err := root.Lstat(rel)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			if mkErr := root.Mkdir(rel, 0o700); mkErr != nil {
+			if mkErr := root.Mkdir(rel, 0o700); mkErr != nil && !errors.Is(mkErr, os.ErrExist) {
 				return fmt.Errorf("%w: mkdir %s: %v", ErrUnsafePath, rel, mkErr)
 			}
 			info, err = root.Lstat(rel)
@@ -499,7 +499,7 @@ func (s *WorkflowStore) ReadArtifact(runID, relPath string) (string, error) {
 		}
 		return "", fmt.Errorf("%w: %v", ErrUnsafePath, err)
 	}
-	if info.IsDir() || isReparseOrSymlink(info) {
+	if !info.Mode().IsRegular() || isReparseOrSymlink(info) {
 		return "", fmt.Errorf("%w: invalid artifact file", ErrUnsafePath)
 	}
 	raw, err := s.root.ReadFile(targetRel)
@@ -609,7 +609,7 @@ func (s *WorkflowStore) LoadRun(runID string) (*RunState, error) {
 		}
 		return nil, fmt.Errorf("%w: %v", ErrUnsafePath, err)
 	}
-	if info.IsDir() || isReparseOrSymlink(info) {
+	if !info.Mode().IsRegular() || isReparseOrSymlink(info) {
 		return nil, fmt.Errorf("%w: unsafe state.json", ErrUnsafePath)
 	}
 	return readStateFile(s.root, stateRel, runID)
@@ -803,7 +803,7 @@ func rejectNonRegularIfExists(root *os.Root, rel string) error {
 		}
 		return fmt.Errorf("%w: %v", ErrUnsafePath, err)
 	}
-	if info.IsDir() || isReparseOrSymlink(info) {
+	if !info.Mode().IsRegular() || isReparseOrSymlink(info) {
 		return fmt.Errorf("%w: non-regular or symlinked target %s", ErrUnsafePath, rel)
 	}
 	return nil
