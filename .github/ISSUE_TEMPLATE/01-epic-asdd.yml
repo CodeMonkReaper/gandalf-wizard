@@ -1,0 +1,76 @@
+name: "Épica ASDD"
+description: "Feature o cambio sustancial gestionado con el ciclo ASDD completo."
+title: "epic(<área>): "
+labels: ["type:epic", "lane:asdd", "status:spec"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Usa esta plantilla para abrir una épica ASDD desde el inicio (`specify`), vinculada a `GW-SPEC-001` y a la constitución vigente.
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: "Objetivo"
+      description: "Qué problema resuelve la épica y qué valor entrega."
+      placeholder: "Especificar e implementar..."
+    validations:
+      required: true
+  - type: input
+    id: slug
+    attributes:
+      label: "Slug ASDD"
+      description: "Identificador kebab-case usado en specs/, plans/, analysis/, progress/ y rama."
+      placeholder: "workflow-runtime-03"
+    validations:
+      required: true
+  - type: input
+    id: referencias_spec
+    attributes:
+      label: "Referencias GW-SPEC-001"
+      description: "Áreas maestras (GW-xx) y criterios de aceptación globales (AC-xx) aplicables."
+      placeholder: "GW-05, GW-14, AC-01, AC-03"
+    validations:
+      required: false
+  - type: textarea
+    id: alcance
+    attributes:
+      label: "Alcance confirmado"
+      description: "Capacidades incluidas en esta entrega."
+    validations:
+      required: true
+  - type: textarea
+    id: fuera_de_alcance
+    attributes:
+      label: "Fuera de alcance inicial"
+      description: "Qué queda explícitamente fuera de este ciclo."
+    validations:
+      required: true
+  - type: textarea
+    id: decisiones_abiertas
+    attributes:
+      label: "Decisiones abiertas"
+      description: "Puntos a resolver en specify, clarify o plan."
+    validations:
+      required: false
+  - type: textarea
+    id: estado_asdd
+    attributes:
+      label: "Estado ASDD"
+      value: |
+        - [ ] `specify` + `clarify` — aprobar `02-DOCS/wiki/sdd/specs/<slug>.md`
+        - [ ] `plan` + `tasks` — aprobar `02-DOCS/wiki/sdd/plans/<slug>.md`
+        - [ ] `analyze` — registrar consistencia (`PASS`) en `02-DOCS/wiki/sdd/analysis/<slug>.md`
+        - [ ] Abrir sub-Issues `T001`..`T00N` tras `plan` + `tasks`
+        - [ ] `implement` + `verify` + `review` — completar sub-Issues con Informe de Cierre Técnico en cada uno
+        - [ ] Fusionar PR a `master` con `Closes #<épica>` tras autorización humana
+    validations:
+      required: false
+  - type: checkboxes
+    id: cierre_epica
+    attributes:
+      label: "Reglas de gobierno y cierre"
+      options:
+        - label: "Cada sub-Issue publicó su Informe de Cierre Técnico (revisión técnica + errores/soluciones) antes de pasar al siguiente."
+          required: false
+        - label: "Verificación de cierre y revisión adversarial de rama completa en verde."
+          required: false

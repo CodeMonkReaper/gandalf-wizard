@@ -1,0 +1,55 @@
+name: "Cambio FTD"
+description: "Cambio acotado autorizado gestionado bajo el carril FTD (documento único)."
+title: "ftd(<área>): "
+labels: ["type:ftd", "lane:ftd", "status:ready"]
+body:
+  - type: textarea
+    id: intencion
+    attributes:
+      label: "Intención"
+      description: "Qué cambia y por qué aporta valor."
+    validations:
+      required: true
+  - type: textarea
+    id: alcance
+    attributes:
+      label: "Alcance y fuera de alcance"
+      description: "Límites explícitos del cambio."
+    validations:
+      required: true
+  - type: input
+    id: documento_ftd
+    attributes:
+      label: "Documento FTD"
+      description: "Ruta del documento único en la wiki."
+      placeholder: "02-DOCS/wiki/ftd/<slug>.md"
+    validations:
+      required: true
+  - type: textarea
+    id: verificacion
+    attributes:
+      label: "Verificación prevista"
+      description: "Comandos, revisiones y pruebas observables para demostrar el cambio."
+    validations:
+      required: true
+  - type: dropdown
+    id: riesgo
+    attributes:
+      label: "Riesgo previsto (rsc risk)"
+      description: "Si rsc risk devuelve tier:2, este cambio debe escalar al carril ASDD."
+      options:
+        - "tier:0"
+        - "tier:1"
+    validations:
+      required: true
+  - type: checkboxes
+    id: cierre_tecnico
+    attributes:
+      label: "Puerta de Cierre Técnico (obligatoria antes de pasar al siguiente Issue)"
+      options:
+        - label: "Informe de Cierre Técnico publicado con revisión técnica de lo implementado."
+          required: false
+        - label: "Tabla de errores del desarrollo y soluciones aplicadas documentada (o declarado `Ninguno`)."
+          required: false
+        - label: "Evidencia real verificada, revisión fresca (si aplica por `tier:1`) y documento FTD actualizado."
+          required: false
