@@ -2,7 +2,7 @@
 
 Al iniciar o retomar trabajo, leer [el índice de conocimiento](02-DOCS/wiki/index.md) y su checkpoint vigente. Antes de código de producto, comprobar la ratificación de la constitución y la aprobación de la especificación. Las propuestas del contexto maestro conservan su estado conceptual.
 
-Para operar RSC, seguir [la instalación fijada y sus límites](02-DOCS/wiki/harness/installation.md). Los comandos del paquete npm upstream carecen del target Vibe. Mantener las autorizaciones humanas de push, PR y servicios externos; las instrucciones del harness no conceden permisos adicionales.
+Para operar RSC, seguir [la instalación fijada y sus límites](02-DOCS/wiki/harness/installation.md). Los comandos del paquete npm upstream carecen del target Vibe. Mantener las autorizaciones humanas de push, PR y servicios externos; las instrucciones del harness no conceden permisos adicionales. Al delegar en Mistral Vibe, consultar siempre `rsc-vibe models` y pedir al propietario que seleccione el modelo ejecutor (sin exponer perfiles internos del bridge); registrar solo el modelo en Issues, progreso y cierres técnicos.
 
 
 <!-- rsc-suggest:start -->

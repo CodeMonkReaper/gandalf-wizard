@@ -28,7 +28,7 @@ approved: 2026-11-20
   - Paso: `pending`, `running`, `awaiting_approval`, `passed`, `failed`, `skipped`, `cancelled`.
   - Gate (`GW-44`): `pass`, `fail`, `blocked`, `needs_human_review`.
 - **Parada conservadora `4A` y aprobación vinculada:** al llegar cualquier rama a `human_approval`, no se lanza ningún paso nuevo en ninguna rama (solo concluyen ordenadamente los pasos `running`); `workflow approve` exige `--checkpoint <huella>` coincidente y `--reason` obligatorio en `reject`; `resume` bloquea antes de lanzar pasos nuevos si queda cualquier puerta obligatoria pendiente.
-- **Códigos de salida y esquema JSON:** salida `--json` con `schema_version: "1"`; se conservan intactos códigos `0–10` de Foundation/Router/Sync (`0` OK, `1` interno, `2` uso, `3` configuración/definición/preflight, `4` acceso denegado, `5–7` ROMERO/doctor, `8–9` router, `10` cancelado) y se reservan sin colisión para workflow: `11` (`awaiting_approval`), `12` (`paused`), `13` (`partial`), `14` (`blocked`), `15` (`failed`), `16` (`conflict` — concurrencia ocupada, huella obsoleta, definición alterada o estado terminal/puerta cerrada).
+- **Códigos de salida y esquema JSON:** salida `--json` con `schema_version: "1"`; se conservan intactos códigos `0–10` de Foundation/Router/Sync (`0` OK, `1` interno, `2` uso, `3` configuración/definición/preflight/`run-id` no encontrado, `4` acceso denegado, `5–7` ROMERO/doctor, `8–9` router, `10` cancelado) y se reservan sin colisión para workflow: `11` (`awaiting_approval`), `12` (`paused`), `13` (`partial`), `14` (`blocked`), `15` (`failed`), `16` (`conflict` — concurrencia ocupada, huella obsoleta, definición alterada o estado terminal/puerta cerrada).
 
 ## 1. Contexto y restricciones
 
@@ -68,6 +68,8 @@ approved: 2026-11-20
 
 ## 3. Interfaces y contratos
 
+> Las firmas Go concretas de `### Interfaces por tarea` son el contrato canónico de implementación; esta sección resume sus invariantes y códigos de salida.
+
 ### 3.1 Esquema y Preflight (`internal/workflow/schema`)
 
 ```text
@@ -93,7 +95,7 @@ gates.EvaluateGate(spec: GateSpec, rawOutput: string, secretValues: []string) ->
       - aplica non_empty, min_length/max_length, contains/not_contains, regex_match/regex_forbid, json_valid/json_required_keys
       - si falla regla normal -> Status: "fail" (Retryable: !spec.Informative)
 
-gates.EvaluateObjective(obj: ObjectiveSpec, steps: map[string]StepRecord, artifacts: ArtifactIndex) -> ObjectiveVerdict
+gates.EvaluateObjective(obj: ObjectiveSpec, steps: map[string]StepOutcome, artifacts: map[string]string) -> ObjectiveVerdict
   - postcondition:
       - si algún paso obligatorio está failed/cancelled/blocked o falta algún entregable/criterio -> failed (o blocked si hubo bloqueo duro)
       - si todos los pasos obligatorios y criterios del objetivo pasan, pero >= 1 paso/rama opcional es failed/skipped -> partial
@@ -104,13 +106,13 @@ gates.EvaluateObjective(obj: ObjectiveSpec, steps: map[string]StepRecord, artifa
 
 ```text
 store.OpenRoot(projectRoot: string) -> *WorkflowStore | ErrUnsafePath
-store.CreateRun(def: ValidatedWorkflow) -> (*RunHandle, *RunState) | error
+store.CreateRun(def: ValidatedWorkflow) -> (runID: string, *RunState) | error
 store.AcquireExclusive(runID: string) -> (*RunLock, error /* ErrRunBusy si otro proceso avanza/decide */)
 store.SaveArtifact(runID: string, stepID: string, iter: int, name: string, sanitizedContent: string) -> ArtifactRef | error
 store.WriteCheckpoint(runID: string, state: RunState) -> CheckpointDigest | error
 store.LoadRun(runID: string) -> RunState | ErrRunNotFound | ErrCorruptState
 store.WriteCancelRequest(runID: string, reason: string) -> error
-store.HasCancelRequest(runID: string) -> (bool, string)
+store.HasCancelRequest(runID: string) -> (bool, string, error)
   - invariant: todas las rutas resueltas dentro de .gandalf/workflows/ vía os.Root; rechazo de symlinks/escapes
   - invariant: WriteCheckpoint calcula checkpoint_digest SHA-256 canónico (run_id, definition_sha256, state_revision, pasos, artefactos, puertas pendientes) y publica vía archivo temporal en el mismo directorio + reemplazo atómico
   - invariant: AcquireExclusive usa bloqueo OS no bloqueante liberado por el kernel si el proceso muere
@@ -121,14 +123,14 @@ store.HasCancelRequest(runID: string) -> (bool, string)
 
 ```text
 MemoryPort.Query(ctx, projectID, callerID, query) -> (MemoryArtifact, error)
-RouterPort.Execute(ctx, complexity, risk, profile, prompt, secretValues) -> (RouterOutcome, error)
+RouterPort.Execute(ctx, req: RouterRequest) -> (RouterResult, error)
 
 engine.Validate(ctx, defPath, deps) -> ValidateReport | error
 engine.Run(ctx, defPath, deps) -> RunSummary | error
 engine.Status(runID, store) -> StatusView | error
 engine.Approve(runID, gateID, checkpointDigest, decision, reason, store) -> ApproveResult | error
 engine.Resume(ctx, runID, deps) -> RunSummary | error
-engine.Cancel(runID, reason, store) -> CancelResult | error
+engine.Cancel(ctx, runID, reason, store) -> CancelResult | error
   - invariant: Run y Resume adquieren RunLock; limitan paralelismo por concurrency_limit (por defecto conservador, ej. 4)
   - invariant: ante human_approval (4A), detiene despacho de pasos nuevos en todas las ramas, espera terminación ordenada de pasos running, persiste checkpoint con checkpoint_digest y pausa en awaiting_approval
   - invariant: Approve verifica estado awaiting_approval, puerta pendiente, definition_sha256 vigente y coincidencia exacta de checkpoint_digest; rechaza reject sin reason; nunca lanza pasos
@@ -143,21 +145,21 @@ engine.Cancel(runID, reason, store) -> CancelResult | error
 | `succeeded`, `validate` válido, `status`, `approve` válido | `0` | `succeeded` / `validated` / `ok` |
 | Error interno inesperado o checkpoint corrupto | `1` | `error` |
 | Uso inválido de flags, falta `--checkpoint`, falta `--reason` en `reject` | `2` | `rejected` |
-| Error de configuración, definición inválida o proveedor no listo | `3` | `invalid` / `config_error` |
+| Error de configuración, definición inválida, proveedor no listo o `run-id` inexistente (`ErrRunNotFound`) | `3` | `invalid` / `config_error` / `not_found` |
 | Cancelado mediante `workflow cancel` (`cancelled`) | `10` | `cancelled` |
 | Detenido esperando aprobación humana (`awaiting_approval`) | `11` | `awaiting_approval` |
 | Interrumpido reanudable (`paused`, `Ctrl+C` durante corrida) | `12` | `paused` |
 | Cierre terminal parcial por rama opcional fallida (`partial`) | `13` | `partial` |
 | Bloqueado por rechazo humano o `no_secrets` / política dura (`blocked`) | `14` | `blocked` |
 | Fallo de paso obligatorio o criterio de objetivo (`failed`) | `15` | `failed` |
-| Conflicto (`ErrRunBusy`, `--checkpoint` obsoleto, definición alterada, corrida terminal en `resume`) | `16` | `conflict` |
+| Conflicto (`ErrRunBusy`, `--checkpoint` obsoleto, definición alterada, corrida terminal en `resume` informando su estado terminal en el payload) | `16` | `conflict` |
 
 ## 4. Modelo de datos y flujo
 
 ### Entidades principales
 
 - **`WorkflowDefinition`:** `schema_version` (`"1"`), `id`, `version`, `concurrency_limit` (opcional, defecto conservador `4`), `objective` (`ObjectiveSpec`), `steps` (`[]StepSpec`).
-- **`ObjectiveSpec`:** `id`, `version`, `statement`, `constraints` (`[]string`), `deliverables` (`[]DeliverableRef` mapeando nombre → `<step_id>.<output>`), `success_criteria` (`[]CriterionSpec` deterministas evaluados al cierre).
+- **`ObjectiveSpec`:** `id`, `version`, `statement`, `constraints` (`[]string`), `deliverables` (`[]DeliverableRef` mapeando nombre → `<step_id>.<output>`), `success_criteria` (`[]CriterionSpec{id, deliverable, rules}` compartiendo el catálogo cerrado de 6 reglas deterministas de `GateSpec`, siempre bloqueantes y nunca informativas).
 - **`StepSpec`:** `id`, `kind` (`memory_query` | `router_task` | `quality_gate` | `human_approval`), `depends_on` (`[]string`), `optional` (`bool`), `inputs` (`map[string]string`), `outputs` (`[]string`), más configuración específica por tipo (`memory`, `router`, `gate` con reglas + `informative`, `correction.max_iterations` + `gate_step_id`, `approval.prompt`).
 - **`RunState` (persistido en `.gandalf/workflows/runs/<run-id>/state.json`):** `run_id`, `definition_path`, `definition_sha256`, `state_revision`, `checkpoint_digest`, `status`, `steps` (`map[string]StepRecord`), `gates` (`map[string]GateRecord`), `approvals` (`[]ApprovalRecord`), `warnings` (`[]string`), `objective_verdict`.
 - **`StepRecord`:** `status`, `iteration`, `attempts` (historial de intentos con diagnóstico redactado), `artifacts` (`[]ArtifactRef` con `name`, `rel_path`, `sha256`, `size_bytes`, `summary`), `error`.
@@ -184,7 +186,7 @@ engine.Cancel(runID, reason, store) -> CancelResult | error
 | `AC-04` | Integración (`engine`) | Intento 1 falla gate, intento 2 recibe diagnóstico y pasa; agotamiento de `max_iterations` detiene sin bucle infinito en `failed` | `RouterPort` programado por intento + historial de intentos en `state.json` |
 | `AC-05` | Contrato CLI + Integración | Parada conservadora `4A` (`0` pasos nuevos al aparecer puerta), `approve` exige `--checkpoint` y `--reason` en `reject`, `resume` bloqueado si falta otra puerta obligatoria, rechazo opcional omite solo su rama | `cli.Run` in-process + puertos deterministas + `WorkflowStore` real |
 | `AC-06` | Integración (`store` + `engine`) | Rechazo con código `16` ante definición editada post-inicio, `--checkpoint` obsoleto/ajeno o reutilización de aprobación | Sistema de archivos temporal real con modificación de archivo entre pasos |
-| `AC-07` | Integración + Proceso real | Interrupción (`Ctrl+C`/cancelación de contexto) → `paused` (`12`), fallo de paso → `failed` (`15`), `resume` conserva `run-id` sin repetir `passed`; `resume` en terminal devuelve código de estado sin reejecutar | Proceso/contexto cancelado determinísticamente + inspección de contadores de llamada |
+| `AC-07` | Integración + Proceso real | Interrupción (`Ctrl+C`/cancelación de contexto) → `paused` (`12`), fallo de paso → `failed` (`15`), `resume` conserva `run-id` sin repetir `passed`; `resume` en terminal devuelve código `16` (`conflict`) con el estado terminal en el diagnóstico/JSON sin reejecutar | Proceso/contexto cancelado determinísticamente + inspección de contadores de llamada |
 | `AC-08` | Integración multiproceso | `workflow cancel` sobre corrida `running` activa y sobre `paused`/`awaiting_approval` → `cancelled` (`10`); dos procesos compitiendo por `run`/`resume`/`approve` → uno avanza y el otro recibe código `16` sin corromper `state.json` | Dos goroutines/subprocesos reales contra bloqueo OS (`run.lock`) en directorio temporal real |
 | `AC-09` | E2E in-process | Escenario completo `analisis-propuesta@1.0.0` → `succeeded`; rama opcional fallida con objetivo cumplido → `partial` (`13`); criterio de objetivo incumplido → `failed` (`15`) | `cli.Run` completo + puertos dobles controlados + `WorkflowStore` real |
 | `AC-10` | Seguridad + Regresión | Centinela de secreto ausente en stdout, stderr, `--json`, `status`, `state.json`, `events.jsonl` y `artifacts/`; árbol de trabajo intacto fuera de `.gandalf/workflows/`; `go test -count=1 ./...` y `TestRepoSecurityGate` en verde | Centinelas sintéticos + escáner real de repositorio + suite completa existente |
@@ -246,7 +248,7 @@ Los comandos de prueba son compromisos de implementación (TDD estricto según `
 
 Las restricciones globales de §0 aplican implícitamente a todas las tareas. Nombres y firmas concretas para ejecución aislada (incluidos lotes focalizados de 3–4 archivos en Mistral Vibe):
 
-- **T001 (`internal/workflow/schema`):** Produce `WorkflowDefinition`, `ObjectiveSpec`, `DeliverableRef`, `CriterionSpec`, `StepSpec`, `GateSpec`, `ValidateOptions{CheckProviders bool, MemoryReady bool, RouterReady bool}`, `ValidatedWorkflow{Definition WorkflowDefinition, DefinitionPath string, DefinitionSHA256 string, ExecutionOrder []string}`, `ValidationError{Code string, Field string, Message string}` y `LoadAndValidate(defPath string, opts ValidateOptions) (ValidatedWorkflow, error)`. Errores tipados verificables con `errors.As` (`*ValidationErrors`). Cero escritura en disco y cero invocaciones externas.
+- **T001 (`internal/workflow/schema`):** Produce `WorkflowDefinition`, `ObjectiveSpec`, `DeliverableRef`, `CriterionSpec{ID string, Deliverable string, Rules []GateRuleSpec}`, `StepSpec`, `GateSpec`, `GateRuleSpec`, `ValidateOptions{CheckProviders bool, MemoryReady bool, RouterReady bool}`, `ValidatedWorkflow{Definition WorkflowDefinition, DefinitionPath string, DefinitionSHA256 string, ExecutionOrder []string}`, `ValidationError{Code string, Field string, Message string}` y `LoadAndValidate(defPath string, opts ValidateOptions) (ValidatedWorkflow, error)`. Errores tipados verificables con `errors.As` (`*ValidationErrors`). La única relación de corrección permitida es `router_task.correction.gate_step_id` apuntando a un paso `quality_gate` bloqueante que declara a ese `router_task` en `depends_on` (con `max_iterations >= 1`); cualquier ciclo en `depends_on` se rechaza como ciclo no declarado. Cero escritura en disco y cero invocaciones externas.
 - **T002 (`internal/workflow/gates`):** Consume `schema.GateSpec` y `schema.ObjectiveSpec`. Produce `Redact(input string, secretValues []string) string`, `HasSecrets(input string, secretValues []string) bool`, `GateResult{Status string /* pass|fail|blocked */, Retryable bool, Informative bool, Violations []string, Warnings []string}`, `EvaluateGate(spec schema.GateSpec, rawOutput string, secretValues []string) GateResult`, `StepOutcome{ID string, Optional bool, Status string, GateStatus string, Warnings []string}`, `ObjectiveVerdict{Status string /* succeeded|partial|failed|blocked */, MetCriteria []string, FailedCriteria []string, Warnings []string}` y `EvaluateObjective(obj schema.ObjectiveSpec, steps map[string]StepOutcome, artifacts map[string]string) ObjectiveVerdict`.
 - **T003 (`internal/workflow/store`):** Consume `schema.ValidatedWorkflow`. Produce errores centinela `ErrUnsafePath`, `ErrRunBusy`, `ErrRunNotFound`, `ErrCorruptState`, tipos `RunState`, `StepRecord`, `AttemptRecord`, `ArtifactRef{Name, RelPath, SHA256, SizeBytes, Summary}`, `GateRecord`, `ApprovalRecord`, `RunEvent` y `WorkflowStore` con `OpenRoot(projectRoot string) (*WorkflowStore, error)`, `CreateRun(def schema.ValidatedWorkflow) (string, *RunState, error)`, `AcquireExclusive(runID string) (*RunLock, error)`, `SaveArtifact(runID, stepID string, iter int, name, sanitizedContent string) (ArtifactRef, error)`, `WriteCheckpoint(runID string, state *RunState) (string, error)`, `AppendEvent(runID string, ev RunEvent) error`, `LoadRun(runID string) (*RunState, error)`, `WriteCancelRequest(runID, reason string) error`, `HasCancelRequest(runID string) (bool, string, error)`.
 - **T004 (`internal/workflow/engine`):** Consume `schema`, `gates` y `store`. Define puertos del lado consumidor `MemoryPort{Query(ctx, projectID, callerID, query) (MemoryResult, error)}` y `RouterPort{Execute(ctx, req RouterRequest) (RouterResult, error)}`, `Dependencies{Store *store.WorkflowStore, Memory MemoryPort, Router RouterPort, ProjectID, CallerID string, SecretValues []string, MemoryReady, RouterReady bool}`. Produce `Validate(ctx, defPath string, deps Dependencies) (ValidateReport, error)` y `Run(ctx, defPath string, deps Dependencies) (RunSummary, error)` con bucle coordinador único, paralelismo acotado por `concurrency_limit` (defecto `4`), interpolación redactada, `quality_gate` y ciclos `max_iterations`.
@@ -269,4 +271,14 @@ Las restricciones globales de §0 aplican implícitamente a todas las tareas. No
 
 ## Subissues en GitHub
 
-Pendientes de autorización humana (se abrirán bajo la [épica #40](https://github.com/CodeMonkReaper/gandalf-wizard/issues/40) con la plantilla `02-task-asdd.yml`, preferiblemente tras superar `analyze` con `GATE: PASS`).
+| Tarea | Subissue |
+| --- | --- |
+| `T001` | [#43](https://github.com/CodeMonkReaper/gandalf-wizard/issues/43) |
+| `T002` `[P]` | [#44](https://github.com/CodeMonkReaper/gandalf-wizard/issues/44) |
+| `T003` `[P]` | [#45](https://github.com/CodeMonkReaper/gandalf-wizard/issues/45) |
+| `T004` | [#46](https://github.com/CodeMonkReaper/gandalf-wizard/issues/46) |
+| `T005` | [#47](https://github.com/CodeMonkReaper/gandalf-wizard/issues/47) |
+| `T006` | [#48](https://github.com/CodeMonkReaper/gandalf-wizard/issues/48) |
+| `T007` | [#49](https://github.com/CodeMonkReaper/gandalf-wizard/issues/49) |
+| `T008` | [#50](https://github.com/CodeMonkReaper/gandalf-wizard/issues/50) |
+| `T009` | [#51](https://github.com/CodeMonkReaper/gandalf-wizard/issues/51) |
