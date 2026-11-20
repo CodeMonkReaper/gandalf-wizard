@@ -6,7 +6,7 @@ tags: [sdd, spec, sync-skills-patrones, catalogo]
 timestamp: 2026-11-19T15:53:39Z
 topic: sdd
 slug: sync-skills-patrones
-status: planned
+status: shipped
 approved: 2026-11-19
 issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/28
 ---
