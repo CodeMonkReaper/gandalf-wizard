@@ -43,9 +43,6 @@ func HasSecrets(input string, secretValues []string) bool {
 // Redact replaces any known secret pattern or explicit secret value in input with RedactedPlaceholder.
 func Redact(input string, secretValues []string) string {
 	out := input
-	for _, re := range secretPatterns {
-		out = re.ReplaceAllString(out, RedactedPlaceholder)
-	}
 	sorted := make([]string, 0, len(secretValues))
 	for _, secret := range secretValues {
 		if strings.TrimSpace(secret) == "" {
@@ -58,6 +55,9 @@ func Redact(input string, secretValues []string) string {
 	})
 	for _, secret := range sorted {
 		out = strings.ReplaceAll(out, secret, RedactedPlaceholder)
+	}
+	for _, re := range secretPatterns {
+		out = re.ReplaceAllString(out, RedactedPlaceholder)
 	}
 	return out
 }

@@ -23,11 +23,13 @@ func TestWorkflowGates(t *testing.T) {
 	mistral, openai, google, githubClassic, githubFine, pemHeader, pemBlock, dynamicSecret := syntheticSecrets()
 
 	t.Run("redaccion_y_deteccion_de_secretos", func(t *testing.T) {
-		secretList := []string{"", "   ", "romero-live-", dynamicSecret}
+		hybridSecret := "sk-" + "proj-" + strings.Repeat("aB3d", 6) + "+tail"
+		secretList := []string{"", "   ", "romero-live-", dynamicSecret, hybridSecret}
 		inputs := []struct {
-			name   string
-			raw    string
-			secret string
+			name      string
+			raw       string
+			secret    string
+			wantExact string
 		}{
 			{name: "mistral", raw: "header " + mistral + " tail", secret: mistral},
 			{name: "openai", raw: "bearer " + openai + " end", secret: openai},
@@ -36,7 +38,8 @@ func TestWorkflowGates(t *testing.T) {
 			{name: "github_pat", raw: "tok=" + githubFine, secret: githubFine},
 			{name: "pem_header", raw: "payload " + pemHeader, secret: pemHeader},
 			{name: "pem_block", raw: "before\n" + pemBlock + "\nafter", secret: "MIIBVAIBADANBgkqhkiG9w0BAQEFAASC"},
-			{name: "dynamic_longest_first", raw: "env=" + dynamicSecret, secret: dynamicSecret},
+			{name: "dynamic_longest_first", raw: "env=" + dynamicSecret, secret: dynamicSecret, wantExact: "env=" + RedactedPlaceholder},
+			{name: "hybrid_dynamic_with_pattern_prefix", raw: "key=" + hybridSecret, secret: "+tail", wantExact: "key=" + RedactedPlaceholder},
 		}
 
 		for _, tc := range inputs {
@@ -47,6 +50,9 @@ func TestWorkflowGates(t *testing.T) {
 				redacted := Redact(tc.raw, secretList)
 				if strings.Contains(redacted, tc.secret) {
 					t.Fatalf("Redact leaked secret material for %s: %q", tc.name, redacted)
+				}
+				if tc.wantExact != "" && redacted != tc.wantExact {
+					t.Fatalf("Redact(%q) = %q, want exact %q", tc.name, redacted, tc.wantExact)
 				}
 				if !strings.Contains(redacted, RedactedPlaceholder) {
 					t.Fatalf("Redact missing placeholder %q in %q", RedactedPlaceholder, redacted)
@@ -370,13 +376,49 @@ func TestWorkflowGates(t *testing.T) {
 			}
 		})
 
-		t.Run("blocked_por_bloqueo_duro_en_paso_o_secreto", func(t *testing.T) {
+		t.Run("blocked_por_paso_con_gate_blocked_y_redacta_warnings", func(t *testing.T) {
 			verdict := EvaluateObjectiveWithSecrets(
 				baseObj,
 				map[string]StepOutcome{
-					"sintesis": {ID: "sintesis", Status: "passed", GateStatus: GateStatusBlocked},
+					"sintesis": {
+						ID:         "sintesis",
+						Status:     "passed",
+						GateStatus: GateStatusBlocked,
+						Warnings:   []string{"nota con " + dynamicSecret},
+					},
+				},
+				map[string]string{"analisis_final": goodJSON},
+				[]string{dynamicSecret},
+			)
+			if verdict.Status != RunStatusBlocked {
+				t.Fatalf("Status = %q, want %q", verdict.Status, RunStatusBlocked)
+			}
+			if len(verdict.Warnings) != 1 || verdict.Warnings[0] != "nota con "+RedactedPlaceholder {
+				t.Fatalf("Warnings = %v, want redacted warning", verdict.Warnings)
+			}
+		})
+
+		t.Run("blocked_por_secreto_patron_fijo_en_entregable", func(t *testing.T) {
+			verdict := EvaluateObjectiveWithSecrets(
+				baseObj,
+				map[string]StepOutcome{
+					"sintesis": {ID: "sintesis", Status: "passed"},
 				},
 				map[string]string{"analisis_final": `{"veredicto":"` + mistral + `","riesgos":[]}`},
+				nil,
+			)
+			if verdict.Status != RunStatusBlocked {
+				t.Fatalf("Status = %q, want %q", verdict.Status, RunStatusBlocked)
+			}
+		})
+
+		t.Run("blocked_por_secretValues_dinamico_en_entregable", func(t *testing.T) {
+			verdict := EvaluateObjectiveWithSecrets(
+				baseObj,
+				map[string]StepOutcome{
+					"sintesis": {ID: "sintesis", Status: "passed"},
+				},
+				map[string]string{"analisis_final": `{"veredicto":"` + dynamicSecret + `","riesgos":[]}`},
 				[]string{dynamicSecret},
 			)
 			if verdict.Status != RunStatusBlocked {
