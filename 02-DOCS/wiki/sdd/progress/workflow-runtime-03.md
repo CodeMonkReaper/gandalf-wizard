@@ -16,7 +16,7 @@ slug: workflow-runtime-03
 
 - Rama de trabajo: `feat/workflow-runtime-03`.
 - Estrategia confirmada por el propietario: **PRs separados por corte** (Corte 1: `T001`–`T003` [`#43`–`#45`], Corte 2: `T004`–`T005` [`#46`–`#47`], Corte 3: `T006`–`T009` [`#48`–`#51` + cierre de `#40`]).
-- Modelo ejecutor en Vibe seleccionado por el propietario: `zai-glm-5-3` (`T001`–`T008`; `T009` en coordinador directo).
+- Modelo ejecutor en Vibe seleccionado por el propietario: `zai-glm-5-3` en `T001`; cambiado por autorización del propietario a `zai-glm-5-3-flash` desde `T002`–`T003` (`T009` en coordinador directo).
 - Base pre-código verificada: los 15 paquetes Go actuales pasan `go test -count=1 ./...` antes de crear `internal/workflow/`.
 
 ## T001 · #43 · 2026-11-20
@@ -52,6 +52,74 @@ slug: workflow-runtime-03
   - `security`: `TestRepoSecurityGate` en verde dentro de la suite completa; 0 escrituras de disco y 0 fugas de valores/patrones en errores.
   - `traceability`: cubre `AC-01`, `AC-03`, `AC-04`, `AC-06` (y base de `S6`).
 - **Skill resolution**: `used: [implement, go, review]`, `missing: []`, `fallback: []`.
+
+## T002 · #44 · 2026-11-20
+
+- **Tarea / Issue**: `T002` / [#44](https://github.com/CodeMonkReaper/gandalf-wizard/issues/44) — implementar evaluador determinista `gates`, redactor de secretos y veredicto de objetivo en `internal/workflow/gates`.
+- **Estado**: `complete`.
+- **Estado previo (RED)**: el coordinador creó [redact.go](../../../../internal/workflow/gates/redact.go), [gates.go](../../../../internal/workflow/gates/gates.go), [objective.go](../../../../internal/workflow/gates/objective.go) (stubs) y [gates_test.go](../../../../internal/workflow/gates/gates_test.go); `go test -count=1 -v ./internal/workflow/gates -run '^TestWorkflowGates$'` falló como se esperaba en detección/redacción, las 6 familias de reglas, `no_secrets` y evaluación de objetivo (`Q2`).
+- **Delegación a Vibe (intento 1)**:
+  - **Fecha**: 2026-11-20
+  - **Task ID / Modelo**: `workflow-t002-gates` · solicitado/efectivo `zai-glm-5-3-flash`
+  - **Run ID / Estado**: `58c853d3-af6f-47fe-8c66-97aeef73eac4` · `DONE_WITH_CONCERNS` (`exitCode: 3`, `stopReason: limit`, 62.4 s)
+  - **Trabajo realizado por Vibe**: implementó `redact.go` y `gates.go` (sin alcanzar `objective.go` en el tope de 6 turnos).
+  - **Verificaciones ejecutadas por el coordinador**: `git status --short internal/workflow/gates` y `go test -count=1 -v ./internal/workflow/gates -run '^TestWorkflowGates$'` (28/28 subtests de redacción/reglas/`no_secrets` en verde; faltó `objective.go`).
+  - **Limitaciones y siguiente paso**: reintento acotado `workflow-t002-gates-r2` focalizado únicamente en `objective.go` y warnings cuando `spec.Rules` está vacío.
+- **Delegación a Vibe (intento 2)**:
+  - **Fecha**: 2026-11-20
+  - **Task ID / Modelo**: `workflow-t002-gates-r2` · solicitado/efectivo `zai-glm-5-3-flash`
+  - **Run ID / Estado**: `f584caf0-1a68-4f18-92fe-4537b078afde` · `DONE_WITH_CONCERNS` (`exitCode: 3`, `stopReason: limit`, 31.8 s)
+  - **Trabajo realizado por Vibe**: implementó `internal/workflow/gates/objective.go` completo.
+  - **Verificaciones ejecutadas por el coordinador**: `go test -count=1 -v ./internal/workflow/gates -run '^TestWorkflowGates$'` (34/34 subtests en `PASS`); el coordinador completó `Warnings` para `len(spec.Rules) == 0 && spec.Informative` en `gates.go` antes de commitear.
+  - **Limitaciones y siguiente paso**: abierto el ciclo de revisión independiente para validar casos borde de solapamiento e aserciones.
+- **Implementación, verificación GREEN / triangulación y revisión (`rsc risk` + ledger)**:
+  - **Riesgo real**: `rsc risk --base a2101fe --json` → `tier 1` (`classes: ["default"]`, 1 revisor, `humanApproval: false`, `policySource: origin/master`).
+  - **Commit inicial**: `121095f`.
+  - **Revisión ronda 1 (`121095f`)**: revisor fresco (`9294dab0`) → `3 reported → 3 unique → 0 toVerify` (`L24` nit en `dynamic_longest_first`, `L25` nit en precedencia de redacción híbrida `sk-proj-...+tail`, `L26` nit en subtest acoplado de bloqueo; `VERDICT: APPROVE WITH NITS`). El coordinador reforzó `gates_test.go` en RED (`hybrid_dynamic_with_pattern_prefix` falló con `"key=[redactado]+tail"`) y corrigió en `redact.go` (`3869018`).
+  - **Revisión ronda 2 (`121095f..3869018`)**: revisor fresco (`819b27e1`) → `1 reported → 1 unique → 1 confirmed` (`L27`, `should-fix`, `sequential-replacement-overlap-and-rescan` en `redact.go:56`; verificado `CONFIRMED` por `finding-verifier` fresco `702423bc`).
+  - **Revisión ronda 3 (`3869018..b506223`)**: corregido en RED→GREEN añadiendo 3 subtests de regresión en `gates_test.go` (patrón fijo con subcadena explícita, secretos solapados y subcadenas de `[redactado]` + idempotencia) e implementando fusión de intervalos en una sola pasada en `redact.go` (`b506223`). Revisor fresco (`162f76a3`) → `0` hallazgos, `VERDICT: APPROVE`; `L24`–`L27` cerrados como `fixed` en el ledger.
+- **Controles ejecutados**:
+  - `tests`: `go test -count=1 -v ./internal/workflow/gates -run '^TestWorkflowGates$'` (`PASS`, 41/41 subtests) y dentro de la suite completa `go test -count=1 ./...` (`18/18` paquetes en verde).
+  - `build`: `gofmt -l internal/workflow/gates` (salida vacía), `go vet ./...` (`ok`) y `go build ./...` (`ok`).
+  - `security`: `TestRepoSecurityGate` en verde sin literales contiguos de secretos ni fugas en errores/warnings.
+  - `traceability`: cubre `AC-03`, `AC-09`, `AC-10`.
+- **Skill resolution**: `used: [implement, go, review]`, `missing: []`, `fallback: []`.
+
+## T003 · #45 · 2026-11-20
+
+- **Tarea / Issue**: `T003` / [#45](https://github.com/CodeMonkReaper/gandalf-wizard/issues/45) — implementar almacén confinado `.gandalf/workflows/`, checkpoints atómicos y bloqueo OS `run.lock` en `internal/workflow/store`.
+- **Estado**: `complete`.
+- **Estado previo (RED)**: el coordinador creó [store.go](../../../../internal/workflow/store/store.go), [checkpoint.go](../../../../internal/workflow/store/checkpoint.go), [lock_windows.go](../../../../internal/workflow/store/lock_windows.go), [lock_other.go](../../../../internal/workflow/store/lock_other.go) (stubs) y [store_test.go](../../../../internal/workflow/store/store_test.go); `go test -count=1 -v ./internal/workflow/store -run '^TestWorkflowStore$'` falló como se esperaba con `not implemented`.
+- **Delegación a Vibe (intento 1)**:
+  - **Fecha**: 2026-11-20
+  - **Task ID / Modelo**: `workflow-t003-store` · solicitado `zai-glm-5-3-flash`, efectivo `no disponible`
+  - **Run ID / Estado**: `6d04253b-6782-47d4-8ace-2b542bb7d571` · `BLOCKED` (`Owner and child exited without final record` tras reinicio de entorno)
+  - **Trabajo realizado por Vibe**: 0 archivos modificados.
+  - **Verificaciones ejecutadas por el coordinador**: `Get-ChildItem internal/workflow/store` (marcas intactas) y confirmación de que `TestWorkflowStore` continuaba en RED.
+  - **Limitaciones y siguiente paso**: reintento acotado `workflow-t003-store-r2` con contrato completo en línea.
+- **Delegación a Vibe (intento 2)**:
+  - **Fecha**: 2026-11-20
+  - **Task ID / Modelo**: `workflow-t003-store-r2` · solicitado `zai-glm-5-3-flash`, efectivo `no disponible`
+  - **Run ID / Estado**: `9966d9cd-e149-47ed-b48f-c7802f9e3ea9` · `BLOCKED` (proceso bloqueado >14 min con 0 CPU tras escribir 3 de 4 archivos; tarea cancelada y proceso huérfano terminado)
+  - **Trabajo realizado por Vibe**: escribió `checkpoint.go`, `lock_windows.go` y `lock_other.go`; no alcanzó a escribir `store.go`.
+  - **Verificaciones ejecutadas por el coordinador**: inspección de `store.go` (sin cambios desde el stub); alcanzado el tope de 2 intentos por tarea, el coordinador asumió el cierre directo completando `store.go`, aplicando fusión de intervalos + idempotencia `[redactado]` en `checkpoint.go` y `runtime.KeepAlive` en `lock_windows.go`/`lock_other.go`.
+  - **Limitaciones y siguiente paso**: avanzar a commit aislado y revisión independiente tras verificar Windows y compilado Linux.
+- **Implementación, verificación GREEN / triangulación y revisión (`rsc risk` + ledger)**:
+  - **Commit inicial**: `8c4b4ee`.
+  - **Riesgo real**: `rsc risk --base b506223 --json` → `tier 1` (`classes: ["default"]`, 1 revisor, `humanApproval: false`, `policySource: origin/master`).
+  - **Revisión ronda 1 (`8c4b4ee`)**: revisor fresco (`68d8014f`) → `3 reported → 3 unique → 1 confirmed` (`L28`, `should-fix`, `concurrent-race` en `store.go:239` `ensureSafeDir` sin manejar `os.ErrExist` ante concurrencia, verificado `CONFIRMED` por `finding-verifier` fresco `7cfe7e4e`; más `L29` nit en `!info.Mode().IsRegular()` y `L30` nit en tope de `MAX_PATH` en test).
+  - **Revisión ronda 2 (`8c4b4ee..e3f3a55`)**: corregido en RED→GREEN añadiendo `apertura_concurrente_openroot` (falló en ronda 0 con `mkdirat .gandalf: file exists` antes del fix), re-stat ante `os.ErrExist`, `!info.Mode().IsRegular()` en todos los guardias de archivo y tope exacto `<= 185` en el test `MAX_PATH` (`e3f3a55`). Revisor fresco (`eed6025c`) sobre el diff incremental → `0` hallazgos, `VERDICT: APPROVE`; `L28`–`L30` cerrados como `fixed` en el ledger.
+- **Controles ejecutados**:
+  - `tests`: `go test -count=1 -v ./internal/workflow/store -run '^TestWorkflowStore$'` (`PASS`, incluidos confinamiento `os.Root`, rechazo de junctions/escapes/`MAX_PATH`, `apertura_concurrente_openroot`, checkpoints SHA-256 atómicos, corrupción `ErrCorruptState`, contención real entre procesos con `LockFileEx`, liberación por kernel y `cancel.req` sin `RunLock`) y `go test -count=1 ./...` (`18/18` paquetes en verde).
+  - `build`: `gofmt -l internal/workflow` (salida vacía), `go vet ./...` (`ok`), `go build ./...` (`ok`) y `GOOS=linux GOARCH=amd64 go build ./...` (`ok`).
+  - `security`: `TestRepoSecurityGate` en verde tras la última edición; cero secretos en historial ni artefactos rastreados.
+  - `traceability`: cubre `AC-06`, `AC-07`, `AC-08`, `AC-10`.
+- **Skill resolution**: `used: [implement, go, review]`, `missing: []`, `fallback: []`.
+
+## Fin de Corte 1 (T001–T003)
+
+- Sub-Issues cerrados técnicamente en `status:in-review`: [#43](https://github.com/CodeMonkReaper/gandalf-wizard/issues/43) (`T001`), [#44](https://github.com/CodeMonkReaper/gandalf-wizard/issues/44) (`T002`) y [#45](https://github.com/CodeMonkReaper/gandalf-wizard/issues/45) (`T003`).
+- Suite completa post-código: `go test -count=1 ./...` (`18/18` paquetes `ok`). Pendiente de autorización humana para `git push` y apertura del **PR #1 (Corte 1)**.
 
 ## Decision queue
 
