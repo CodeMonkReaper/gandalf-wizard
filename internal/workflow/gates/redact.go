@@ -22,6 +22,11 @@ var secretPatterns = []*regexp.Regexp{
 	regexp.MustCompile(`(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,})`),
 }
 
+type textSpan struct {
+	start int
+	end   int
+}
+
 // HasSecrets reports whether input contains any known secret pattern or explicit secret value.
 func HasSecrets(input string, secretValues []string) bool {
 	for _, re := range secretPatterns {
@@ -40,24 +45,99 @@ func HasSecrets(input string, secretValues []string) bool {
 	return false
 }
 
-// Redact replaces any known secret pattern or explicit secret value in input with RedactedPlaceholder.
+// Redact replaces all fixed secret patterns and explicit secret values in a single
+// merged-span pass over input so overlapping matches never leak suffixes or
+// re-scan inserted placeholders.
 func Redact(input string, secretValues []string) string {
-	out := input
-	sorted := make([]string, 0, len(secretValues))
+	if input == "" {
+		return input
+	}
+
+	var spans []textSpan
+	for _, re := range secretPatterns {
+		for _, loc := range re.FindAllStringIndex(input, -1) {
+			if loc[1] > loc[0] {
+				spans = append(spans, textSpan{start: loc[0], end: loc[1]})
+			}
+		}
+	}
+
+	placeholderSpans := findPlaceholderSpans(input)
 	for _, secret := range secretValues {
 		if strings.TrimSpace(secret) == "" {
 			continue
 		}
-		sorted = append(sorted, secret)
+		for offset := 0; offset <= len(input)-len(secret); {
+			idx := strings.Index(input[offset:], secret)
+			if idx < 0 {
+				break
+			}
+			abs := offset + idx
+			sp := textSpan{start: abs, end: abs + len(secret)}
+			if !insideAnySpan(sp, placeholderSpans) {
+				spans = append(spans, sp)
+			}
+			offset = abs + 1
+		}
 	}
-	sort.SliceStable(sorted, func(i, j int) bool {
-		return len(sorted[i]) > len(sorted[j])
+
+	if len(spans) == 0 {
+		return input
+	}
+
+	sort.Slice(spans, func(i, j int) bool {
+		if spans[i].start != spans[j].start {
+			return spans[i].start < spans[j].start
+		}
+		return spans[i].end > spans[j].end
 	})
-	for _, secret := range sorted {
-		out = strings.ReplaceAll(out, secret, RedactedPlaceholder)
+
+	merged := make([]textSpan, 0, len(spans))
+	cur := spans[0]
+	for _, sp := range spans[1:] {
+		if sp.start < cur.end {
+			if sp.end > cur.end {
+				cur.end = sp.end
+			}
+			continue
+		}
+		merged = append(merged, cur)
+		cur = sp
 	}
-	for _, re := range secretPatterns {
-		out = re.ReplaceAllString(out, RedactedPlaceholder)
+	merged = append(merged, cur)
+
+	var b strings.Builder
+	b.Grow(len(input))
+	pos := 0
+	for _, sp := range merged {
+		b.WriteString(input[pos:sp.start])
+		b.WriteString(RedactedPlaceholder)
+		pos = sp.end
 	}
-	return out
+	b.WriteString(input[pos:])
+	return b.String()
+}
+
+func findPlaceholderSpans(input string) []textSpan {
+	var spans []textSpan
+	for offset := 0; offset <= len(input)-len(RedactedPlaceholder); {
+		idx := strings.Index(input[offset:], RedactedPlaceholder)
+		if idx < 0 {
+			break
+		}
+		abs := offset + idx
+		end := abs + len(RedactedPlaceholder)
+		spans = append(spans, textSpan{start: abs, end: end})
+		offset = end
+	}
+	return spans
+}
+
+func insideAnySpan(candidate textSpan, containers []textSpan) bool {
+	for _, c := range containers {
+		if candidate.start >= c.start && candidate.end <= c.end {
+			return true
+		}
+	}
+	return false
 }

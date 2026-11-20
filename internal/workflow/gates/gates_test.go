@@ -70,6 +70,39 @@ func TestWorkflowGates(t *testing.T) {
 		if got := Redact(clean, secretList); got != clean {
 			t.Fatalf("Redact(clean) = %q, want %q", got, clean)
 		}
+
+		t.Run("explicit_secret_inside_fixed_pattern", func(t *testing.T) {
+			embedded := "key=" + "sk-" + "proj-" + "romero-live-" + strings.Repeat("1234", 4)
+			got := Redact(embedded, []string{"romero-live-"})
+			want := "key=" + RedactedPlaceholder
+			if got != want {
+				t.Fatalf("Redact(embedded) = %q, want %q", got, want)
+			}
+			gotPEM := Redact("before\n"+pemBlock+"\nafter", []string{"PRIVATE KEY"})
+			if gotPEM != "before\n"+RedactedPlaceholder+"\nafter" {
+				t.Fatalf("Redact(pem with interior secret) = %q", gotPEM)
+			}
+		})
+
+		t.Run("partially_overlapping_explicit_secrets", func(t *testing.T) {
+			got := Redact("auth=user:pass123456", []string{"pass123456", "user:pass123"})
+			want := "auth=" + RedactedPlaceholder
+			if got != want {
+				t.Fatalf("Redact(overlapping) = %q, want %q", got, want)
+			}
+		})
+
+		t.Run("placeholder_substring_no_rescan_and_idempotent", func(t *testing.T) {
+			secrets := []string{dynamicSecret, "red", "act"}
+			got := Redact("env="+dynamicSecret, secrets)
+			want := "env=" + RedactedPlaceholder
+			if got != want {
+				t.Fatalf("Redact(rescan) = %q, want %q", got, want)
+			}
+			if again := Redact(got, secrets); again != want {
+				t.Fatalf("Redact(Redact(x)) = %q, want idempotent %q", again, want)
+			}
+		})
 	})
 
 	t.Run("reglas_deterministas_del_catalogo_cerrado", func(t *testing.T) {
