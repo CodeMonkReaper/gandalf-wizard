@@ -490,6 +490,36 @@ func TestWorkflowSchema(t *testing.T) {
 				wantCode: "invalid_correction",
 			},
 			{
+				name: "correccion apuntando a gate que evalua otro paso paralelo",
+				jsonBody: `{
+  "schema_version": "1",
+  "id": "corr-wrong-target-parallel",
+  "version": "1.0.0",
+  "objective": {"id": "O1", "version": "1.0.0", "statement": "S", "deliverables": [{"name": "d", "source": "r.o"}], "success_criteria": [{"id": "C1", "deliverable": "d", "rules": [{"kind": "non_empty"}]}]},
+  "steps": [
+    {"id": "other", "kind": "router_task", "outputs": ["o"], "router": {"prompt": "p1"}},
+    {"id": "r", "kind": "router_task", "outputs": ["o"], "router": {"prompt": "p2"}, "correction": {"gate_step_id": "g", "max_iterations": 2}},
+    {"id": "g", "kind": "quality_gate", "depends_on": ["r", "other"], "gate": {"target": "other.o", "rules": [{"kind": "non_empty"}]}}
+  ]
+}`,
+				wantCode: "invalid_correction",
+			},
+			{
+				name: "correccion apuntando a gate que evalua ancestro transitivo",
+				jsonBody: `{
+  "schema_version": "1",
+  "id": "corr-wrong-target-ancestor",
+  "version": "1.0.0",
+  "objective": {"id": "O1", "version": "1.0.0", "statement": "S", "deliverables": [{"name": "d", "source": "r.o"}], "success_criteria": [{"id": "C1", "deliverable": "d", "rules": [{"kind": "non_empty"}]}]},
+  "steps": [
+    {"id": "other", "kind": "router_task", "outputs": ["o"], "router": {"prompt": "p1"}},
+    {"id": "r", "kind": "router_task", "depends_on": ["other"], "outputs": ["o"], "router": {"prompt": "p2"}, "correction": {"gate_step_id": "g", "max_iterations": 2}},
+    {"id": "g", "kind": "quality_gate", "depends_on": ["r"], "gate": {"target": "other.o", "rules": [{"kind": "non_empty"}]}}
+  ]
+}`,
+				wantCode: "invalid_correction",
+			},
+			{
 				name: "complexity y risk invalidos en router_task",
 				jsonBody: `{
   "schema_version": "1",

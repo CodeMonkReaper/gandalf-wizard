@@ -507,6 +507,9 @@ func validateReferencesAndCorrections(
 			if !containsString(gateStep.DependsOn, s.ID) {
 				addErr("invalid_correction", cf+".gate_step_id", fmt.Sprintf("correction gate %q must list %q in depends_on", gateStep.ID, s.ID))
 			}
+			if targetStep, _, ok := splitStepOutputRef(gateStep.Gate.Target); !ok || targetStep != s.ID {
+				addErr("invalid_correction", cf+".gate_step_id", fmt.Sprintf("correction gate %q must target an output of step %q", gateStep.ID, s.ID))
+			}
 			if prev, dup := claimedGates[gateStep.ID]; dup {
 				addErr("invalid_correction", cf+".gate_step_id", fmt.Sprintf("correction gate %q already bound to step %q", gateStep.ID, prev))
 			} else {
