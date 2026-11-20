@@ -6,14 +6,15 @@ tags: [sdd, spec, workflow-runtime, odd, gates]
 timestamp: 2026-11-20T15:50:00Z
 topic: sdd
 slug: workflow-runtime-03
-status: clarified
+status: planned
+approved: 2026-11-20
 branch: feat/workflow-runtime-03
 issue: https://github.com/CodeMonkReaper/gandalf-wizard/issues/40
 ---
 
 # Spec — Workflow Runtime 0.3: motor local de workflows declarativos
 
-> Slug: `workflow-runtime-03` · Estado: `clarified` (pendiente aprobación humana) · Creada: 2026-11-20 · Clarificada: 2026-11-20
+> Slug: `workflow-runtime-03` · Estado: `planned` (aprobada: 2026-11-20) · Creada: 2026-11-20 · Clarificada: 2026-11-20
 > Hereda: [constitución v1.2.0](../constitution.md) · Épica: [Issue #40](https://github.com/CodeMonkReaper/gandalf-wizard/issues/40)
 
 ## Problema y por qué importa
@@ -202,5 +203,6 @@ Un workflow `analisis-propuesta@1.0.0` vinculado al objetivo `OBJ-PROP-001@1.0.0
 - **2026-11-20 · `Q3` (confirmación de `workflow approve`) →** Adoptado exigir `--checkpoint <huella>` además de `<run-id>`, `--gate` y `--decision` (con `--reason` obligatorio en `reject`). *Motivo:* garantizar deterministamente que la aprobación corresponde al estado y artefactos inspeccionados.
 - **2026-11-20 · `Q4` (puertas humanas con ramas paralelas) →** Adoptada la opción **4A (Parada conservadora)** tras la observación del propietario sobre no gastar tokens ni cuota en trabajo que podría descartarse si la puerta se rechaza: al aparecer `human_approval`, no se lanzan pasos nuevos en ninguna rama (solo concluyen los `running`), y `resume` exige que todas las puertas obligatorias pendientes estén decididas. *Motivo:* proteger consumo y cuota ante rechazos.
 - **2026-11-20 · Balance del handoff (`clarify`):** `Q1`–`Q4` preguntadas, resueltas e incorporadas; `S1`–`S7` validadas y mantenidas como `suposición tomada`; 1 `decisión diferida` dejada intacta para `plan`; 1 `área no formulable` (`GW-57`/`OPEN-13`) anotada sin graduar.
+- **2026-11-20 · Aprobación humana:** el propietario respondió «apruebo» tras revisar la especificación clarificada y su escenario de referencia `analisis-propuesta@1.0.0`, habilitando la Etapa 3 (`plan` → `tasks` → `analyze`).
 
 Referencias de producto para esta entrega: [GW-SPEC-001 v1.1.0-draft, GW-05, GW-14, GW-15, GW-18, GW-19, GW-40, GW-42, GW-44, anexos A.5/A.6 y AC-01 / AC-03](../../../../Gandalf_Wizard_v1.1.0/docs/GANDALF_WIZARD_ESPECIFICACION_MAESTRA.md) · [Constitución v1.2.0](../constitution.md) · [Issue #40](https://github.com/CodeMonkReaper/gandalf-wizard/issues/40).
