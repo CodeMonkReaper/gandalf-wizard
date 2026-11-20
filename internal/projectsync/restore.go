@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"path"
 
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/syncfs"
 )
@@ -217,6 +218,25 @@ func Restore(project *syncfs.ScopedProject, operationID string, opts RestoreOpti
 		}
 	}
 
+	// Drop any staged temp files left behind by an interrupted apply, one call per
+	// unique parent directory, before the operation is marked restored.
+	cleanedDirs := make(map[string]struct{}, len(op.Entries))
+	for _, entry := range op.Entries {
+		dir := path.Dir(entry.Path)
+		if _, done := cleanedDirs[dir]; done {
+			continue
+		}
+		cleanedDirs[dir] = struct{}{}
+		if _, err := project.CleanupOperationStages(lease, operationID, entry.Path); err != nil {
+			return interrupted("restore stage cleanup failed", err)
+		}
+		if leaseName != operationID {
+			if _, err := project.CleanupOperationStages(lease, leaseName, entry.Path); err != nil {
+				return interrupted("restore stage cleanup failed", err)
+			}
+		}
+	}
+
 	op.Phase = PhaseRestored
 	if err := persistOperation(project, lease, op); err != nil {
 		return recoveryPending("restore state persist failed", summaries, fmt.Errorf("projectsync: persist restored phase: %w", err))
@@ -255,9 +275,21 @@ func planRestore(project *syncfs.ScopedProject, op Operation) ([]restorePlanItem
 		switch entry.State {
 		case EntryPending:
 			if !matchesAfterState(entry, cur) {
-				// The operation crashed before writing this entry; leave the
+				// The operation crashed before writing this entry. A pre-existing
+				// target that is now missing may have been unlinked with its staged
+				// bytes still on disk: restore it from backup. Otherwise leave the
 				// unwritten file and any external edit on it untouched.
-				continue
+				if entry.BeforeExists && !cur.Exists {
+					hasStage, err := project.HasOperationStage(op.ID, entry.Path, entry.AfterSHA256)
+					if err != nil {
+						return nil, nil, err
+					}
+					if !hasStage {
+						continue
+					}
+				} else {
+					continue
+				}
 			}
 		case EntryWritten, EntryConflict:
 			if matchesBeforeState(entry, cur) {

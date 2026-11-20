@@ -65,6 +65,16 @@ func TestSyncCatalog(t *testing.T) {
 			t.Fatalf("unexpected skill entry: %+v", skillEntry)
 		}
 
+		// Register alone must leave the state directory ignored by git.
+		gitignoreAbs := filepath.Join(projectRoot, ".gandalf", "sync", ".gitignore")
+		gitignoreBytes, err := os.ReadFile(gitignoreAbs)
+		if err != nil {
+			t.Fatalf("read state .gitignore after Register: %v", err)
+		}
+		if string(gitignoreBytes) != "*\n" {
+			t.Fatalf("unexpected state .gitignore content: %q", string(gitignoreBytes))
+		}
+
 		// Idempotent re-register with identical content.
 		again, err := cat.Register(KindSkill, "revision-cambios", "1.0.0", skillDir, RegisterOptions{
 			Origin: "local:ejemplo/skill",

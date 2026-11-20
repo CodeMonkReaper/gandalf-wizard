@@ -20,7 +20,7 @@ verdict: PASS
 
 | Tarea | Comprobación | Resultado | Evidencia |
 | --- | --- | --- | --- |
-| T001 (#29) | `GANDALF_SYNC_NATIVE_TEST=1 go test -count=1 -v ./internal/syncnative -run '^TestSyncNativeProbe$'` | **PASS** (en T001 con Vibe `3.1.2`; no re-ejecutada en T009 por cambio de versión local a `3.1.3`, cubierta E2E en T008) | [sync-skills-patrones-native.md](sync-skills-patrones-native.md) |
+| T001 (#29) | `GANDALF_SYNC_NATIVE_TEST=1 go test -count=1 -v ./internal/syncnative -run '^TestSyncNativeProbe$'` | **PASS** (`27.95 s`, Codex `0.169.0` + Vibe `3.1.3`, `project`/`precedence`/`empty-project`, `proxy_denials=0`) | [sync-skills-patrones-native.md](sync-skills-patrones-native.md) |
 | T002 (#30) | `go test -count=1 -v ./internal/syncfs -run '^TestSyncFilesystem$'` | **PASS** (`1.866 s`) | [sync-skills-patrones-filesystem.md](sync-skills-patrones-filesystem.md) |
 | T003 (#31) | `go test -count=1 -v ./internal/synccatalog -run '^TestSyncCatalog$'` | **PASS** (`1.495 s`, 12/12 subtests) | [sync-skills-patrones.md](../progress/sync-skills-patrones.md) |
 | T004 (#32) | `go test -count=1 -v ./internal/projectsync -run '^TestSyncPreview$'` | **PASS** (`1.999 s`, 9/9 subtests) | [sync-skills-patrones.md](../progress/sync-skills-patrones.md) |

@@ -11,3 +11,9 @@ func (*projectFS) observe([]string) (FileState, error) { return FileState{}, Err
 func (*projectFS) change([]string, FileState, FileState, string) (bool, error) {
 	return false, ErrUnsupported
 }
+func (*projectFS) hasOperationStage([]string, string, string) (bool, error) {
+	return false, ErrUnsupported
+}
+func (*projectFS) cleanupOperationStages([]string, string) (int, error) {
+	return 0, ErrUnsupported
+}

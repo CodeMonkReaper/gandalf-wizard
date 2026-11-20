@@ -57,7 +57,7 @@ func DefaultVerifiedProfiles() []NativeProfile {
 		},
 		{
 			Target:        "vibe",
-			Version:       "3.1.2",
+			Version:       "3.1.3",
 			OS:            "windows/amd64",
 			Trust:         "trusted",
 			SkillLocation: ".agents/skills",

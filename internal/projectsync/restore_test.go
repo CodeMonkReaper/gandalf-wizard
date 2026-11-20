@@ -302,6 +302,150 @@ func TestSyncRestore(t *testing.T) {
 		}
 	})
 
+	t.Run("unlinked_pending_with_stage", func(t *testing.T) {
+		root, proj, _, opID := newAppliedProject(t)
+
+		// Simulate a crash between unlink and rename for the pre-existing AGENTS.md:
+		// the target is gone, the staged bytes are still on disk, and the entry is pending.
+		op, err := LoadOperation(proj, opID)
+		if err != nil {
+			t.Fatalf("LoadOperation: %v", err)
+		}
+		var agentsIdx = -1
+		for i, e := range op.Entries {
+			if e.Path == "AGENTS.md" {
+				agentsIdx = i
+			}
+		}
+		if agentsIdx < 0 {
+			t.Fatalf("AGENTS.md entry missing from operation")
+		}
+		agentsEntry := op.Entries[agentsIdx]
+		if !agentsEntry.BeforeExists {
+			t.Fatalf("expected AGENTS.md to pre-exist")
+		}
+		afterBytes, err := os.ReadFile(filepath.Join(root, "AGENTS.md"))
+		if err != nil {
+			t.Fatalf("read applied AGENTS.md: %v", err)
+		}
+		stageName := ".gandalf-sync-" + opID + "-0123456789abcdef0123456789abcdef.tmp"
+		if err := os.WriteFile(filepath.Join(root, stageName), afterBytes, 0o644); err != nil {
+			t.Fatalf("write stage file: %v", err)
+		}
+		if err := os.Remove(filepath.Join(root, "AGENTS.md")); err != nil {
+			t.Fatalf("unlink AGENTS.md: %v", err)
+		}
+		op.Entries[agentsIdx].State = EntryPending
+		lease, err := proj.TryExclusive("test-unlinked-pending")
+		if err != nil {
+			t.Fatalf("TryExclusive: %v", err)
+		}
+		if err := persistOperation(proj, lease, op); err != nil {
+			_ = lease.Close()
+			t.Fatalf("persistOperation: %v", err)
+		}
+		if err := lease.Close(); err != nil {
+			t.Fatalf("lease.Close: %v", err)
+		}
+
+		res, err := Restore(proj, opID, RestoreOptions{})
+		if err != nil || res.Status != StatusRestored {
+			t.Fatalf("expected Restore to recover unlinked pending entry, err=%v res=%+v", err, res)
+		}
+		gotAgents, err := os.ReadFile(filepath.Join(root, "AGENTS.md"))
+		if err != nil || string(gotAgents) != foreignAgents {
+			t.Fatalf("AGENTS.md not restored from backup: err=%v got=%q", err, string(gotAgents))
+		}
+		if _, err := os.Stat(filepath.Join(root, stageName)); !os.IsNotExist(err) {
+			t.Fatalf("stage file %q was not cleaned up", stageName)
+		}
+	})
+
+	t.Run("armed_stage_cleanup_preserves_target", func(t *testing.T) {
+		root, proj, _, opID := newAppliedProject(t)
+
+		// Target still intact but externally edited: the pending entry must not be
+		// reverted, yet the leftover stage file must be removed.
+		editedAgents := foreignAgents + "\nedicion externa tras el crash\n"
+		if err := os.WriteFile(filepath.Join(root, "AGENTS.md"), []byte(editedAgents), 0o644); err != nil {
+			t.Fatalf("edit AGENTS.md: %v", err)
+		}
+		stageName := ".gandalf-sync-" + opID + "-fedcba9876543210fedcba9876543210.tmp"
+		if err := os.WriteFile(filepath.Join(root, stageName), []byte("staged bytes\n"), 0o644); err != nil {
+			t.Fatalf("write stage file: %v", err)
+		}
+		op, err := LoadOperation(proj, opID)
+		if err != nil {
+			t.Fatalf("LoadOperation: %v", err)
+		}
+		for i := range op.Entries {
+			if op.Entries[i].Path == "AGENTS.md" {
+				op.Entries[i].State = EntryPending
+			}
+		}
+		lease, err := proj.TryExclusive("test-armed-stage")
+		if err != nil {
+			t.Fatalf("TryExclusive: %v", err)
+		}
+		if err := persistOperation(proj, lease, op); err != nil {
+			_ = lease.Close()
+			t.Fatalf("persistOperation: %v", err)
+		}
+		if err := lease.Close(); err != nil {
+			t.Fatalf("lease.Close: %v", err)
+		}
+
+		res, err := Restore(proj, opID, RestoreOptions{})
+		if err != nil || res.Status != StatusRestored {
+			t.Fatalf("expected Restore to succeed, err=%v res=%+v", err, res)
+		}
+		gotAgents, err := os.ReadFile(filepath.Join(root, "AGENTS.md"))
+		if err != nil || string(gotAgents) != editedAgents {
+			t.Fatalf("external edit to AGENTS.md was not preserved: err=%v got=%q", err, string(gotAgents))
+		}
+		if _, err := os.Stat(filepath.Join(root, stageName)); !os.IsNotExist(err) {
+			t.Fatalf("stage file %q was not cleaned up", stageName)
+		}
+	})
+
+	t.Run("missing_pending_without_stage", func(t *testing.T) {
+		root, proj, _, opID := newAppliedProject(t)
+
+		// Target removed externally with no stage file: the deletion is external and
+		// must be preserved, so AGENTS.md stays absent.
+		if err := os.Remove(filepath.Join(root, "AGENTS.md")); err != nil {
+			t.Fatalf("unlink AGENTS.md: %v", err)
+		}
+		op, err := LoadOperation(proj, opID)
+		if err != nil {
+			t.Fatalf("LoadOperation: %v", err)
+		}
+		for i := range op.Entries {
+			if op.Entries[i].Path == "AGENTS.md" {
+				op.Entries[i].State = EntryPending
+			}
+		}
+		lease, err := proj.TryExclusive("test-missing-pending")
+		if err != nil {
+			t.Fatalf("TryExclusive: %v", err)
+		}
+		if err := persistOperation(proj, lease, op); err != nil {
+			_ = lease.Close()
+			t.Fatalf("persistOperation: %v", err)
+		}
+		if err := lease.Close(); err != nil {
+			t.Fatalf("lease.Close: %v", err)
+		}
+
+		res, err := Restore(proj, opID, RestoreOptions{})
+		if err != nil || res.Status != StatusRestored {
+			t.Fatalf("expected Restore to succeed, err=%v res=%+v", err, res)
+		}
+		if _, err := os.Stat(filepath.Join(root, "AGENTS.md")); !os.IsNotExist(err) {
+			t.Fatalf("externally deleted AGENTS.md was recreated")
+		}
+	})
+
 	t.Run("busy_lease_blocks_restore_against_concurrent_apply", func(t *testing.T) {
 		root, proj, _, opID := newAppliedProject(t)
 

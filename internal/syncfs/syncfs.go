@@ -206,6 +206,45 @@ func (p *ScopedProject) RestrictDir(lease *Lease, path string) error {
 	return p.files.restrictDir(parts)
 }
 
+// HasOperationStage reports whether the confined directory of targetPath holds a
+// staged file of the operation. An empty expectedSHA256 matches any stage.
+func (p *ScopedProject) HasOperationStage(operation, targetPath, expectedSHA256 string) (bool, error) {
+	if !validOperation(operation) {
+		return false, ErrInvalidOperation
+	}
+	parts, err := pathParts(targetPath)
+	if err != nil {
+		return false, err
+	}
+	p.mu.RLock()
+	defer p.mu.RUnlock()
+	if p.files == nil {
+		return false, fs.ErrClosed
+	}
+	return p.files.hasOperationStage(parts, operation, expectedSHA256)
+}
+
+// CleanupOperationStages removes the staged files of the operation from the
+// confined directory of targetPath and reports how many it removed.
+func (p *ScopedProject) CleanupOperationStages(lease *Lease, operation, targetPath string) (int, error) {
+	if !validOperation(operation) {
+		return 0, ErrInvalidOperation
+	}
+	parts, err := pathParts(targetPath)
+	if err != nil {
+		return 0, err
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.files == nil {
+		return 0, fs.ErrClosed
+	}
+	if lease == nil || p.writer != lease {
+		return 0, ErrInvalidLease
+	}
+	return p.files.cleanupOperationStages(parts, operation)
+}
+
 func pathParts(path string) ([]string, error) {
 	if !utf8.ValidString(path) || !filepath.IsLocal(path) {
 		return nil, ErrUnsafePath

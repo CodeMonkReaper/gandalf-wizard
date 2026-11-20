@@ -286,6 +286,7 @@ func TestSyncCLI(t *testing.T) {
 			t.Fatalf("expected ExitConfigError on restore conflict, got %d (out=%s)", code, confOut)
 		}
 		var conf struct {
+			Status      string `json:"status"`
 			OperationID string `json:"operation_id"`
 			Diagnostics []struct {
 				Code string `json:"code"`
@@ -297,6 +298,82 @@ func TestSyncCLI(t *testing.T) {
 		}
 		if conf.OperationID != app.OperationID || len(conf.Diagnostics) == 0 || conf.Diagnostics[0].Code != "restore_conflict" {
 			t.Fatalf("expected operation_id=%q and restore_conflict diagnostic, got %+v", app.OperationID, conf)
+		}
+		if conf.Status != "conflict" {
+			t.Fatalf("expected status %q on restore conflict, got %q (out=%s)", "conflict", conf.Status, confOut)
+		}
+
+		// Text mode must report the operation id and the conflicting file on stderr.
+		code, textOut, textErr := invoke("sync", "restore", "--operation-id", app.OperationID)
+		if code != ExitConfigError {
+			t.Fatalf("expected ExitConfigError on text restore conflict, got %d (out=%s err=%s)", code, textOut, textErr)
+		}
+		if !strings.Contains(textErr, "operation: "+app.OperationID) {
+			t.Fatalf("text restore conflict missing operation id on stderr: %s", textErr)
+		}
+		if !strings.Contains(textErr, "restore_conflict") || !strings.Contains(textErr, "AGENTS.md") {
+			t.Fatalf("text restore conflict missing diagnostic on stderr: %s", textErr)
+		}
+	})
+
+	t.Run("recovery_pending_preserves_status_and_operation_id", func(t *testing.T) {
+		code, prevOut, errOut := invoke("sync", "preview", "--json")
+		if code != ExitOK {
+			t.Fatalf("preview: code=%d out=%s err=%s", code, prevOut, errOut)
+		}
+		var prev struct {
+			ViewID string `json:"view_id"`
+		}
+		if err := json.Unmarshal([]byte(prevOut), &prev); err != nil || prev.ViewID == "" {
+			t.Fatalf("decode preview: %v", err)
+		}
+		code, appOut, errOut := invoke("sync", "apply", "--json", "--view-id", prev.ViewID)
+		if code != ExitOK {
+			t.Fatalf("apply: code=%d out=%s err=%s", code, appOut, errOut)
+		}
+		var app struct {
+			OperationID string `json:"operation_id"`
+		}
+		if err := json.Unmarshal([]byte(appOut), &app); err != nil || app.OperationID == "" {
+			t.Fatalf("decode apply: %v", err)
+		}
+
+		// Mark an interrupted pending operation so apply is blocked by recovery_pending.
+		opFile := filepath.Join(projectRoot, ".gandalf", "sync", "operations", app.OperationID, "operation.json")
+		opBytes, err := os.ReadFile(opFile)
+		if err != nil {
+			t.Fatalf("read operation journal: %v", err)
+		}
+		updatedOp := strings.Replace(string(opBytes), `"applied"`, `"recovery_pending"`, 1)
+		if err := os.WriteFile(opFile, []byte(updatedOp), 0o600); err != nil {
+			t.Fatalf("update operation journal: %v", err)
+		}
+		pendingFile := filepath.Join(projectRoot, ".gandalf", "sync", "pending.json")
+		if err := os.WriteFile(pendingFile, []byte("{\"operation_id\":\""+app.OperationID+"\"}\n"), 0o600); err != nil {
+			t.Fatalf("write pending marker: %v", err)
+		}
+		code, pendOut, _ := invoke("sync", "apply", "--json", "--view-id", prev.ViewID)
+		if code != ExitConfigError {
+			t.Fatalf("expected ExitConfigError on recovery pending, got %d (out=%s)", code, pendOut)
+		}
+		var pend struct {
+			Status      string `json:"status"`
+			OperationID string `json:"operation_id"`
+		}
+		if err := json.Unmarshal([]byte(pendOut), &pend); err != nil {
+			t.Fatalf("decode recovery pending json: %v (out=%s)", err, pendOut)
+		}
+		if pend.Status != "recovery_pending" || pend.OperationID != app.OperationID {
+			t.Fatalf("expected status=recovery_pending and operation_id=%q, got %+v", app.OperationID, pend)
+		}
+
+		// Text mode must print the operation id on stderr.
+		code, textOut, textErr := invoke("sync", "apply", "--view-id", prev.ViewID)
+		if code != ExitConfigError {
+			t.Fatalf("expected ExitConfigError on text recovery pending, got %d (out=%s err=%s)", code, textOut, textErr)
+		}
+		if !strings.Contains(textErr, "operation: "+app.OperationID) {
+			t.Fatalf("text recovery pending missing operation id on stderr: %s", textErr)
 		}
 	})
 }

@@ -9,7 +9,7 @@ topic: sdd
 
 # Escritura confinada y recuperación por archivo
 
-T002 ensaya las primitivas de archivos previstas para el escritor de Gandalf. Los casos ejecutados pasan. La revisión dejó T002 bloqueada para integración. La suite se ejecutó con Go 1.27.3 y Windows amd64 sobre NTFS local. [Plan técnico](../plans/sync-skills-patrones.md) · [Subissue #30](https://github.com/CodeMonkReaper/gandalf-wizard/issues/30)
+T002 ensaya las primitivas de archivos previstas para el escritor de Gandalf. Los casos ejecutados pasan y T002 superó la revisión en ronda 3 (`VERDICT: pass`) tras cerrar Q1 y Q2. La suite se ejecutó con Go 1.27.3 y Windows amd64 sobre NTFS local. [Plan técnico](../plans/sync-skills-patrones.md) · [Subissue #30](https://github.com/CodeMonkReaper/gandalf-wizard/issues/30)
 
 ## Reproducción
 

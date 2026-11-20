@@ -41,7 +41,7 @@ func TestSyncNativeProbe(t *testing.T) {
 			winningSkillPath: probeSkillPath, winningRulePath: probeOverridePath,
 		},
 		{
-			target: "vibe", version: "3.1.2", trust: "invocation-only --trust",
+			target: "vibe", version: installedVibeVersion(t), trust: "invocation-only --trust",
 			collisionSkill: vibeSkillLabel, hiddenSkill: probeSkillLabel,
 			collisionRule: probeRule, hiddenRule: probeOverride,
 			winningSkillPath: vibeSkillPath, winningRulePath: probeRulePath,

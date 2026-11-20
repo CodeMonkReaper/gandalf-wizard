@@ -473,6 +473,8 @@ func Apply(
 		Entries:   entries,
 	}
 
+	appliedSummaries := make([]ChangeSummary, 0, len(view.Changes))
+
 	recoveryResult := func(reason string, cause error) (ApplyResult, error) {
 		op.Phase = PhaseRecoveryPending
 		if persistErr := persistOperation(project, lease, op); persistErr != nil {
@@ -482,7 +484,7 @@ func Apply(
 				ProjectID:   projectID,
 				ViewID:      view.ID,
 				OperationID: opID,
-				Changes:     summaries,
+				Changes:     appliedSummaries,
 			}, errors.Join(cause, persistErr)
 		}
 		return ApplyResult{
@@ -491,7 +493,7 @@ func Apply(
 			ProjectID:   projectID,
 			ViewID:      view.ID,
 			OperationID: opID,
-			Changes:     summaries,
+			Changes:     appliedSummaries,
 		}, cause
 	}
 
@@ -539,6 +541,7 @@ func Apply(
 		if _, err := project.Change(lease, ch.Path, ch.Before, ch.After); err != nil {
 			return recoveryResult("write conflict or failure", err)
 		}
+		appliedSummaries = append(appliedSummaries, summaries[i])
 		op.Entries[i].State = EntryWritten
 		if err := persistOperation(project, lease, op); err != nil {
 			return recoveryResult("cannot persist operation journal", err)

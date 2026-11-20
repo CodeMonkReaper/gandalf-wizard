@@ -90,15 +90,34 @@ func emit(deps Dependencies, jsonMode bool, out syncOutput, text string) {
 	fmt.Fprintln(deps.Stdout, text)
 }
 
-// fail emits a failure response and returns the exit code.
+// fail emits a failure response and returns the exit code. Status and reason
+// already carried by out (for example the typed status of a failed operation)
+// take precedence over the generic fallbacks.
 func fail(deps Dependencies, jsonMode bool, code int, status, reason string, out syncOutput) int {
-	out.Status = status
-	out.Reason = reason
+	if out.Status == "" {
+		out.Status = status
+	}
+	if out.Reason == "" {
+		out.Reason = reason
+	}
 	if jsonMode {
 		emit(deps, true, out, "")
 		return code
 	}
-	fmt.Fprintf(deps.Stderr, "error: %s\n", reason)
+	if out.Status != "" && out.Status != "rejected" && out.Status != "error" {
+		fmt.Fprintf(deps.Stderr, "error (%s): %s\n", out.Status, out.Reason)
+	} else {
+		fmt.Fprintf(deps.Stderr, "error: %s\n", out.Reason)
+	}
+	if out.OperationID != "" {
+		fmt.Fprintf(deps.Stderr, "operation: %s\n", out.OperationID)
+	}
+	for _, change := range out.Changes {
+		fmt.Fprintf(deps.Stderr, "  %s %s\n", change.Action, change.Path)
+	}
+	for _, diag := range out.Diagnostics {
+		fmt.Fprintf(deps.Stderr, "  [%s] %s: %s\n", diag.Code, diag.Path, diag.Message)
+	}
 	return code
 }
 
@@ -375,12 +394,12 @@ func runSyncApply(args []string, deps Dependencies) int {
 	out.OperationID = result.OperationID
 	out.Changes = result.Changes
 	out.Diagnostics = result.Diagnostics
+	out.Status = result.Status
+	out.Reason = result.Reason
 	if err != nil {
 		return failSync(deps, *jsonMode, out, err)
 	}
 
-	out.Status = result.Status
-	out.Reason = result.Reason
 	text := fmt.Sprintf("%s: %d change(s) (operation %s)", result.Status, len(result.Changes), result.OperationID)
 	for _, change := range result.Changes {
 		text += fmt.Sprintf("\n  %s %s", change.Action, change.Path)
@@ -415,12 +434,12 @@ func runSyncRestore(args []string, deps Dependencies) int {
 	out.OperationID = result.OperationID
 	out.Changes = result.Changes
 	out.Diagnostics = result.Diagnostics
+	out.Status = result.Status
+	out.Reason = result.Reason
 	if err != nil {
 		return failSync(deps, *jsonMode, out, err)
 	}
 
-	out.Status = result.Status
-	out.Reason = result.Reason
 	text := fmt.Sprintf("%s: %d change(s) (operation %s)", result.Status, len(result.Changes), result.OperationID)
 	for _, change := range result.Changes {
 		text += fmt.Sprintf("\n  %s %s", change.Action, change.Path)

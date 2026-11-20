@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"syscall"
 )
 
@@ -334,4 +336,120 @@ func checkAccess(current *os.File, replacement syscall.Handle) error {
 
 func discardStage(file *os.File) error {
 	return errors.Join(unlinkHandle(syscall.Handle(file.Fd())), file.Close())
+}
+
+// openPinnedDir pins the parent chain of parts and opens the directory that
+// holds the target name, verifying both handles name the same directory.
+func (f *projectFS) openPinnedDir(parts []string) (syscall.Handle, *os.File, func(), error) {
+	parent, release, err := f.pinParent(parts, false)
+	if err != nil {
+		return 0, nil, nil, err
+	}
+	parentInfo, err := inspectHandle(parent, true)
+	if err != nil {
+		release()
+		return 0, nil, nil, err
+	}
+	dirRel := "."
+	if len(parts) > 1 {
+		dirRel = path.Join(parts[:len(parts)-1]...)
+	}
+	dirFile, err := f.root.Open(dirRel)
+	if err != nil {
+		release()
+		return 0, nil, nil, err
+	}
+	openedInfo, err := inspectHandle(syscall.Handle(dirFile.Fd()), true)
+	if err != nil {
+		_ = dirFile.Close()
+		release()
+		return 0, nil, nil, err
+	}
+	if fileID(openedInfo) != fileID(parentInfo) {
+		_ = dirFile.Close()
+		release()
+		return 0, nil, nil, ErrUnsafePath
+	}
+	return parent, dirFile, func() { _ = dirFile.Close(); release() }, nil
+}
+
+// isOperationStageName reports whether name is a staged file of the operation.
+func isOperationStageName(name, operation string) bool {
+	prefix := ".gandalf-sync-" + operation + "-"
+	return strings.HasPrefix(name, prefix) && strings.HasSuffix(name, ".tmp") &&
+		len(name) > len(prefix)+len(".tmp")
+}
+
+func (f *projectFS) hasOperationStage(parts []string, operation, expectedSHA256 string) (bool, error) {
+	parent, dirFile, cleanup, err := f.openPinnedDir(parts)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	defer cleanup()
+	entries, err := dirFile.ReadDir(-1)
+	if err != nil {
+		return false, err
+	}
+	for _, e := range entries {
+		if !isOperationStageName(e.Name(), operation) {
+			continue
+		}
+		file, id, err := openFile(parent, e.Name(), syscall.GENERIC_READ, shareAll)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return false, err
+		}
+		state, err := readState(file, id)
+		_ = file.Close()
+		if err != nil {
+			return false, err
+		}
+		if expectedSHA256 == "" || state.SHA256 == expectedSHA256 {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (f *projectFS) cleanupOperationStages(parts []string, operation string) (int, error) {
+	parent, dirFile, cleanup, err := f.openPinnedDir(parts)
+	if errors.Is(err, os.ErrNotExist) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, changeError(err)
+	}
+	defer cleanup()
+	entries, err := dirFile.ReadDir(-1)
+	if err != nil {
+		return 0, changeError(err)
+	}
+	removed := 0
+	for _, e := range entries {
+		if !isOperationStageName(e.Name(), operation) {
+			continue
+		}
+		file, _, err := openFile(parent, e.Name(), syscall.GENERIC_READ|deleteAccess, shareRead)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return removed, changeError(err)
+		}
+		uerr := unlinkHandle(syscall.Handle(file.Fd()))
+		cerr := file.Close()
+		if uerr != nil {
+			return removed, changeError(uerr)
+		}
+		if cerr != nil {
+			return removed, changeError(cerr)
+		}
+		removed++
+	}
+	return removed, nil
 }

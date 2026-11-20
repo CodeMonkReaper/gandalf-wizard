@@ -252,6 +252,9 @@ func TestSyncApply(t *testing.T) {
 		if res.Status != StatusRecoveryPending || res.OperationID == "" {
 			t.Fatalf("expected recovery_pending with operation ID, got %+v", res)
 		}
+		if len(res.Changes) != 1 {
+			t.Fatalf("expected exactly 1 applied change before interruption, got %d: %+v", len(res.Changes), res.Changes)
+		}
 		pending, err := PendingRecovery(proj)
 		if err != nil || pending == nil || pending.ID != res.OperationID || pending.Phase != PhaseRecoveryPending {
 			t.Fatalf("unexpected PendingRecovery: err=%v pending=%+v", err, pending)
@@ -280,6 +283,9 @@ func TestSyncApply(t *testing.T) {
 		}
 		if res.Status != StatusRecoveryPending || res.OperationID == "" {
 			t.Fatalf("expected recovery_pending with operation ID, got %+v", res)
+		}
+		if len(res.Changes) != 0 {
+			t.Fatalf("expected 0 applied changes when interrupted before first write, got %d: %+v", len(res.Changes), res.Changes)
 		}
 		// No target file was modified.
 		if _, err := os.Stat(filepath.Join(root, ".agents")); !os.IsNotExist(err) {
@@ -345,6 +351,9 @@ func TestSyncApply(t *testing.T) {
 		}
 		if res.Status != StatusRecoveryPending || res.OperationID == "" {
 			t.Fatalf("expected recovery_pending with operation ID, got %+v", res)
+		}
+		if len(res.Changes) != 2 {
+			t.Fatalf("expected exactly 2 applied changes before the conflicting write, got %d: %+v", len(res.Changes), res.Changes)
 		}
 		// External edit to AGENTS.md must be preserved.
 		gotAgents, err := os.ReadFile(filepath.Join(root, "AGENTS.md"))

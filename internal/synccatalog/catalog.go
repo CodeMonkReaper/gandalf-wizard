@@ -391,10 +391,32 @@ func (c *Catalog) Register(kind ComponentKind, id, version, source string, opts 
 	}
 	defer lease.Close()
 
+	if err := c.project.RestrictDir(lease, c.stateDir); err != nil {
+		return Entry{}, err
+	}
+	if err := c.ensureGitignore(lease); err != nil {
+		return Entry{}, err
+	}
+
 	if err := c.writeEntry(lease, entry); err != nil {
 		return Entry{}, err
 	}
 	return entry, nil
+}
+
+// ensureGitignore keeps the state directory out of version control by writing
+// a "*" ignore file inside it, so catalog blobs never reach a commit.
+func (c *Catalog) ensureGitignore(lease *syncfs.Lease) error {
+	gitignorePath := filepath.ToSlash(filepath.Join(c.stateDir, ".gitignore"))
+	cur, err := c.project.Observe(gitignorePath)
+	if err != nil {
+		return err
+	}
+	if cur.Exists && string(cur.Bytes) == "*\n" {
+		return nil
+	}
+	_, err = c.project.Change(lease, gitignorePath, cur, syncfs.NewFileState([]byte("*\n")))
+	return err
 }
 
 // writeEntry persists the manifest and every resource blob of an entry inside
