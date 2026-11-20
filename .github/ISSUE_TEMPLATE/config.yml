@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Guía de flujo y cierre técnico de Issues
+    url: https://github.com/CodeMonkReaper/gandalf-wizard/blob/master/02-DOCS/wiki/harness/github-issues-workflow.md
+    about: Consulta la taxonomía de etiquetas, el flujo de trabajo y la Puerta de Cierre Técnico obligatoria antes de abrir o cerrar un Issue.
