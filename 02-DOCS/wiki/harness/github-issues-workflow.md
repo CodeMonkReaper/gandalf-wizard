@@ -74,7 +74,7 @@ Este informe garantiza trazabilidad de qué cambió exactamente, qué controles 
 ### 2. Verificación y revisión ejecutada
 - **Comandos y `done-check`:** `<comandos reales y resultado observado; nunca omitir si algo no corrió>`
 - **Riesgo (`rsc risk`) y review:** `<tier, revisor fresco/panel, hallazgos abiertos/resueltos>`
-- **Delegación Vibe (si aplicó):** `<tier, modelo, run ID, qué hizo Vibe y qué verificó el coordinador>`
+- **Delegación Vibe (si aplicó):** `<modelo solicitado/efectivo, run ID, qué hizo Vibe y qué verificó el coordinador>`
 
 ### 3. Errores del desarrollo y solución aplicada
 | Error / bloqueo observado | Causa raíz verificada | Solución aplicada | Prevención / nota |
@@ -92,3 +92,4 @@ Este informe garantiza trazabilidad de qué cambió exactamente, qué controles 
 - **Preservar Markdown en `gh`:** usar siempre here-strings con comillas simples (`@'...'@`) enviados por pipe a `gh issue create --body-file -` o `gh issue comment <N> --body-file -`. Nunca usar `@"..."@` porque PowerShell interpreta o corrompe backticks y variables (`$`).
 - **Higiene de secretos:** ningún Issue, comentario, commit o PR puede contener tokens, rutas privadas de credenciales ni salidas sin redactar (`TestRepoSecurityGate`).
 - **Hook `pre-push` en worktrees:** ejecutar `git push` desde la raíz del repositorio principal cuando se use un worktree enlazado para evitar interferencias de `GIT_DIR` en `TestRepoSecurityGate` (lección registrada en [2026-11-20-retro-sync-skills-patrones.md](../sdd/sessions/2026-11-20-retro-sync-skills-patrones.md#L21)).
+- **Selección por modelo en Vibe:** en Issues, anuncios y cierres técnicos se indica únicamente el **modelo** elegido desde `rsc-vibe models` (nunca perfiles internos como `light`, `balanced`, `debug` o `heavy`); el coordinador traduce internamente el permiso del bridge al despachar con `--model <id>`.

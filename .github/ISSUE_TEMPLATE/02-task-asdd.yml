@@ -54,16 +54,12 @@ body:
         - "tier:2"
     validations:
       required: true
-  - type: dropdown
+  - type: input
     id: delegacion
     attributes:
-      label: "Ejecutor previsto"
-      options:
-        - "Coordinador directo"
-        - "Vibe — light (4 turnos)"
-        - "Vibe — balanced (6 turnos)"
-        - "Vibe — debug (6 turnos)"
-        - "Vibe — heavy (6 turnos)"
+      label: "Ejecutor / modelo Vibe previsto"
+      description: "Indica `Coordinador directo` o el modelo de Vibe elegido desde `rsc-vibe models` (p. ej. `zai-glm-5-3-flash`, `zai-glm-5-3`, `mistral-large-4`, `mistral-vibe-cli-latest`)."
+      placeholder: "Vibe — <modelo> (6 turnos) | Coordinador directo"
     validations:
       required: false
   - type: checkboxes
