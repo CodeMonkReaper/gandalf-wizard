@@ -24,3 +24,6 @@ Al retomar, leer el [checkpoint vigente del 21 de noviembre sobre Workflow Runti
 - Evidencia: [verificación del entorno](sdd/verifications/2026-11-17-entorno-rsc.json), [ratificación y doctor posterior](sdd/verifications/2026-11-17-constitution-ratification.json), [integración viva con ROMERO (`rev 3f46f9a`)](sdd/verifications/2026-11-18-romero-live-integration.json), [verificación de cierre de cli-gandalf (PASS)](sdd/verifications/2026-11-18-cli-gandalf-closing.md), [verificación viva de router-02](sdd/verifications/2026-11-18-router-02-live-verification.json), [verificación de cierre de router-02 (PASS)](sdd/verifications/2026-11-18-router-02-closing.md).
 
 La [constitución v1.2.0](sdd/constitution.md) rige la aprobación de cada implementación. El roadmap y las decisiones abiertas de producto se consultan en los anexos C y D de [GW-SPEC-001](../../Gandalf_Wizard_v1.1.0/docs/GANDALF_WIZARD_ESPECIFICACION_MAESTRA.md).
+
+- Fase 04 con especificación aprobada y aclaraciones cerradas, con plan técnico aprobado. [Prueba de portabilidad entre Codex y OpenCode](sdd/specs/portabilidad-fase-04.md).
+- [Plan técnico de fase 04](sdd/plans/portabilidad-fase-04.md), aprobado, con ocho tareas. El [análisis de consistencia](sdd/analysis/portabilidad-fase-04.md) pasó en segunda revisión. [Épica #58](https://github.com/CodeMonkReaper/gandalf-wizard/issues/58).
