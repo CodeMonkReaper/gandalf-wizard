@@ -106,6 +106,39 @@ func TestWorkflowStoreLockHelper(t *testing.T) {
 }
 
 func TestWorkflowStore(t *testing.T) {
+	t.Run("artifact paths distinguish tuple and case", func(t *testing.T) {
+		dir, err := os.MkdirTemp("", "wf")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { _ = os.RemoveAll(dir) })
+		s, err := OpenRoot(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s.Close()
+		id, _, err := s.CreateRun(sampleValidatedWorkflow())
+		if err != nil {
+			t.Fatal(err)
+		}
+		paths := make(map[string]bool)
+		for _, tc := range []struct {
+			step, output string
+			attempt      int
+		}{
+			{"draft", "2-text", 1}, {"draft-1", "text", 2}, {"Draft", "2-text", 1},
+		} {
+			ref, err := s.SaveArtifact(id, tc.step, tc.attempt, tc.output, tc.step)
+			if err != nil {
+				t.Fatal(err)
+			}
+			key := strings.ToLower(ref.RelPath)
+			if paths[key] {
+				t.Fatal("distinct artifact tuples share a physical path")
+			}
+			paths[key] = true
+		}
+	})
 	t.Run("confinamiento_y_rechazo_de_junctions_escapes_y_max_path", func(t *testing.T) {
 		outside := t.TempDir()
 		missing := filepath.Join(outside, "does-not-exist")

@@ -458,5 +458,28 @@ func TestWorkflowGates(t *testing.T) {
 				t.Fatalf("Status = %q, want %q", verdict.Status, RunStatusBlocked)
 			}
 		})
+
+		t.Run("bloqueo_por_secreto_en_entregable_queda_explicado", func(t *testing.T) {
+			verdict := EvaluateObjectiveWithSecrets(
+				baseObj,
+				map[string]StepOutcome{
+					"sintesis": {ID: "sintesis", Status: "passed"},
+				},
+				map[string]string{"analisis_final": `{"veredicto":"` + dynamicSecret + `","riesgos":[]}`},
+				[]string{dynamicSecret},
+			)
+			if verdict.Status != RunStatusBlocked {
+				t.Fatalf("Status = %q, want %q", verdict.Status, RunStatusBlocked)
+			}
+			if len(verdict.Warnings) != 1 {
+				t.Fatalf("Warnings = %v, want one explanation for the block", verdict.Warnings)
+			}
+			if strings.Contains(verdict.Warnings[0], dynamicSecret) {
+				t.Fatalf("Warnings = %q leaked the secret", verdict.Warnings[0])
+			}
+			if !strings.Contains(verdict.Warnings[0], "analisis_final") {
+				t.Fatalf("Warnings = %q, want the deliverable name", verdict.Warnings[0])
+			}
+		})
 	})
 }

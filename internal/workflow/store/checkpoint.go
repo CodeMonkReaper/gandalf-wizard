@@ -164,12 +164,14 @@ func redactRunState(state *RunState, secrets []string) {
 		state.Steps[id] = step
 	}
 	for id, gate := range state.Gates {
+		gate.Prompt = redactText(gate.Prompt, secrets)
 		gate.Violations = redactStringSlice(gate.Violations, secrets)
 		gate.Warnings = redactStringSlice(gate.Warnings, secrets)
 		state.Gates[id] = gate
 	}
 	for i := range state.Approvals {
 		state.Approvals[i].Reason = redactText(state.Approvals[i].Reason, secrets)
+		state.Approvals[i].DecidedBy = redactText(state.Approvals[i].DecidedBy, secrets)
 	}
 	if state.ObjectiveVerdict != nil {
 		state.ObjectiveVerdict.Warnings = redactStringSlice(state.ObjectiveVerdict.Warnings, secrets)

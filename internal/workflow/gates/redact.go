@@ -3,10 +3,50 @@
 package gates
 
 import (
+	"encoding/json"
+	"errors"
 	"regexp"
 	"sort"
 	"strings"
 )
+
+// RedactJSON redacts string values in structured evidence without touching
+// field names or JSON syntax. It reports whether any value contained a secret.
+func RedactJSON(raw string, secrets []string) (string, bool, error) {
+	if !json.Valid([]byte(raw)) {
+		return "", false, errors.New("invalid JSON artifact")
+	}
+	var content any
+	decoder := json.NewDecoder(strings.NewReader(raw))
+	decoder.UseNumber()
+	if err := decoder.Decode(&content); err != nil {
+		return "", false, err
+	}
+	found := false
+	var clean func(any) any
+	clean = func(value any) any {
+		switch value := value.(type) {
+		case string:
+			found = HasSecrets(value, secrets) || found
+			return Redact(value, secrets)
+		case []any:
+			for i, item := range value {
+				value[i] = clean(item)
+			}
+		case map[string]any:
+			for key, item := range value {
+				value[key] = clean(item)
+			}
+		}
+		return value
+	}
+	content = clean(content)
+	if !found {
+		return raw, false, nil
+	}
+	encoded, err := json.Marshal(content)
+	return string(encoded), found, err
+}
 
 // RedactedPlaceholder replaces detected sensitive material in outputs and logs.
 const RedactedPlaceholder = "[redactado]"

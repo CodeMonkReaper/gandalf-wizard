@@ -37,6 +37,12 @@ func EvaluateObjective(obj schema.ObjectiveSpec, steps map[string]StepOutcome, a
 
 // EvaluateObjectiveWithSecrets evaluates an objective while guarding deliverables against secret leaks.
 func EvaluateObjectiveWithSecrets(obj schema.ObjectiveSpec, steps map[string]StepOutcome, artifacts map[string]string, secretValues []string) ObjectiveVerdict {
+	return EvaluateObjectiveWithEvidence(obj, steps, artifacts, nil, secretValues)
+}
+
+// EvaluateObjectiveWithEvidence preserves raw secret findings for sanitized artifacts.
+// secretEvidence is keyed by the original deliverable source.
+func EvaluateObjectiveWithEvidence(obj schema.ObjectiveSpec, steps map[string]StepOutcome, artifacts map[string]string, secretEvidence map[string]bool, secretValues []string) ObjectiveVerdict {
 	verdict := ObjectiveVerdict{Status: RunStatusSucceeded}
 
 	stepKeys := make([]string, 0, len(steps))
@@ -67,6 +73,7 @@ func EvaluateObjectiveWithSecrets(obj schema.ObjectiveSpec, steps map[string]Ste
 
 	missingDeliverable := false
 	resolved := make(map[string]string, len(obj.Deliverables))
+	detectedByName := make(map[string]bool)
 	for _, d := range obj.Deliverables {
 		content, ok := artifacts[d.Name]
 		if !ok {
@@ -77,8 +84,17 @@ func EvaluateObjectiveWithSecrets(obj schema.ObjectiveSpec, steps map[string]Ste
 			continue
 		}
 		resolved[d.Name] = content
-		if HasSecrets(content, secretValues) {
+		detected, measured := secretEvidence[d.Source]
+		if !measured {
+			detected = HasSecrets(content, secretValues)
+		}
+		if detected {
 			anyBlocked = true
+			detectedByName[d.Name] = true
+			// A hard block must say why; without this the verdict reports every
+			// criterion met and still closes blocked with no explanation.
+			verdict.Warnings = append(verdict.Warnings, Redact(
+				"deliverable "+d.Name+": secret material detected in output", secretValues))
 		}
 	}
 
@@ -88,11 +104,15 @@ func EvaluateObjectiveWithSecrets(obj schema.ObjectiveSpec, steps map[string]Ste
 			verdict.FailedCriteria = append(verdict.FailedCriteria, c.ID)
 			continue
 		}
-		res := EvaluateGate(schema.GateSpec{
+		if detectedByName[c.Deliverable] && requiresNoSecrets(c.Rules) {
+			verdict.FailedCriteria = append(verdict.FailedCriteria, c.ID)
+			continue
+		}
+		res := EvaluateGateWithSecretEvidence(schema.GateSpec{
 			Target:      c.Deliverable,
 			Informative: false,
 			Rules:       c.Rules,
-		}, content, secretValues)
+		}, content, detectedByName[c.Deliverable])
 		switch res.Status {
 		case GateStatusBlocked:
 			anyBlocked = true
@@ -116,4 +136,13 @@ func EvaluateObjectiveWithSecrets(obj schema.ObjectiveSpec, steps map[string]Ste
 	}
 
 	return verdict
+}
+
+func requiresNoSecrets(rules []schema.GateRuleSpec) bool {
+	for _, rule := range rules {
+		if rule.Kind == schema.RuleNoSecrets {
+			return true
+		}
+	}
+	return false
 }
