@@ -1,17 +1,20 @@
 # Gandalf Wizard — Evaluación de viabilidad
 
-Gandalf Wizard es técnicamente viable como plataforma modular para configurar, ejecutar, supervisar, evaluar y mejorar trabajo asistido por IA. La base actual cubre la CLI, la consulta de memoria y el routing de texto. El siguiente salto es ejecutar workflows que puedan usar herramientas, recuperarse de fallos y demostrar qué permisos, fuentes y versiones utilizaron.
+Gandalf Wizard es técnicamente viable como plataforma modular para configurar, ejecutar, supervisar, evaluar y mejorar trabajo asistido por IA. La base actual cubre la CLI, la consulta de memoria, el routing de texto, la sincronización de skills y patrones y Workflow Runtime 0.3. El siguiente hito del roadmap es verificar que una misma definición de workflow cumple sus criterios de aceptación en Codex y OpenCode.
 
 ## Alcance de la evaluación
 
-La evaluación sigue los 56 bloques y las 2.060 entradas del inventario adjunto. Trata en conjunto las entradas que comparten mecanismo, dependencia o límite. Evalúa viabilidad técnica y secuencia de desarrollo. Una estimación de plazo, costo y demanda requiere equipo, presupuesto y usuarios objetivo.
+La evaluación conserva el análisis del inventario original de 56 bloques y 2.060 entradas e incorpora Gandalf Control Center como área 57 de la especificación maestra vigente. Trata en conjunto las entradas que comparten mecanismo, dependencia o límite. Evalúa viabilidad técnica y secuencia de desarrollo. Una estimación de plazo, costo y demanda requiere equipo, presupuesto y usuarios objetivo.
 
-El inventario conserva su carácter de visión de producto. **La evaluación propone cambios de soporte, condiciones verificables y prioridades.** Roo Code oficial pasa a soporte histórico. La defensa y la autorización humana ya forman parte del inventario. El uso de L10 como valor predeterminado sigue abierto a decisión. [Contexto maestro](../gandalf-wizard-contexto-maestro.md) · [Constitución ratificada](wiki/sdd/constitution.md)
+El inventario conserva su carácter de visión de producto. **La evaluación propone cambios de soporte, condiciones verificables y prioridades.** Roo Code oficial pasa a soporte histórico. La defensa y la autorización humana ya forman parte del inventario. El uso de L10 como valor predeterminado sigue abierto a decisión. [Especificación maestra](../Gandalf_Wizard_v1.1.0/docs/GANDALF_WIZARD_ESPECIFICACION_MAESTRA.md) · [Constitución ratificada](wiki/sdd/constitution.md)
 
 ## Base comprobada
 
 - **Foundation 0.1 y CLI.** Go, configuración, diagnóstico y consulta de memoria de ROMERO. La prueba viva demostró búsqueda textual degradada y lectura de detalle con procedencia. La recuperación semántica, los grafos y la escritura necesitan pruebas propias de punta a punta. [CLI](wiki/sdd/specs/cli-gandalf.md) · [Prueba viva de ROMERO](wiki/sdd/verifications/2026-11-18-romero-live-integration.json)
 - **Router 0.2.** Perfiles de modelo y esfuerzo, selección explicable y fallback de solo texto. Las corridas vivas cubrieron Antigravity, Vibe y la API de Mistral. Las APIs directas OpenAI y Gemini tienen pruebas locales simuladas. Codex tiene detección local y puede invocar Gandalf. Su ejecución como destino del router sigue pendiente. [Router 0.2](wiki/sdd/specs/router-02.md) · [Pruebas vivas](wiki/sdd/verifications/2026-11-18-router-02-live-verification.json) · [Detección de harnesses](../internal/harness/detect.go)
+
+- **Sincronización de skills y patrones.** La épica #28 está integrada. La verificación nativa comprobó que Codex y Vibe descubren la skill y la regla generadas en Windows. [Verificación nativa](wiki/sdd/verifications/sync-skills-patrones-native.md)
+- **Workflow Runtime 0.3.** La épica #40 está integrada. La verificación de cierre pasó por la CLI real de Gandalf con ejecutores y ROMERO controlados. El flujo cubrió paralelismo, gates, aprobación humana, checkpoints y reanudación. Los pasos del runtime siguen limitados a solo texto y sin herramientas externas de escritura. [Especificación](wiki/sdd/specs/workflow-runtime-03.md) · [Verificación final](wiki/sdd/verifications/workflow-runtime-03-2026-11-21-r2.md)
 
 ## Núcleo, integraciones y catálogos
 
@@ -35,7 +38,7 @@ La base local y no interactiva admite ejecución con un agente, modelo o harness
 
 El cliente de ROMERO expone búsqueda, construcción de contexto, subgrafos, feedback y consolidación. La recuperación textual, semántica, híbrida, jerárquica, contextual, multidocumental y por grafos necesita pruebas por modalidad. RAG, Agentic RAG, GraphRAG, descomposición de consultas, expansión y reranking deben demostrar mejoras sobre la búsqueda base. Multimodalidad requiere conectores y un corpus apropiado.
 
-ROMERO sigue a cargo de memorias, hechos, fuentes, versiones, indexación, ámbitos de acceso y organización del conocimiento cuando su contrato lo soporte. Esto incluye memorias episódicas, semánticas, procedimentales, compartidas, de proyecto y de organización, así como taxonomías, ontologías, metadatos, grafos y vigencia. Gandalf puede preparar conocimiento derivado, feedback y propuestas de consolidación. La publicación requiere permisos, revisión, procedencia y separación del original. [Contexto maestro](../gandalf-wizard-contexto-maestro.md) · [Prueba viva](wiki/sdd/verifications/2026-11-18-romero-live-integration.json)
+ROMERO sigue a cargo de memorias, hechos, fuentes, versiones, indexación, ámbitos de acceso y organización del conocimiento cuando su contrato lo soporte. Esto incluye memorias episódicas, semánticas, procedimentales, compartidas, de proyecto y de organización, así como taxonomías, ontologías, metadatos, grafos y vigencia. Gandalf puede preparar conocimiento derivado, feedback y propuestas de consolidación. La publicación requiere permisos, revisión, procedencia y separación del original. [Especificación maestra](../Gandalf_Wizard_v1.1.0/docs/GANDALF_WIZARD_ESPECIFICACION_MAESTRA.md) · [Prueba viva](wiki/sdd/verifications/2026-11-18-romero-live-integration.json)
 
 ### 5. Motor de objetivos — viable y prioritario
 
@@ -249,7 +252,11 @@ Los 40 principios pueden guiar la visión. Objetivos, especificación, evidencia
 
 ### 56. Estado de la especificación maestra — viable como visión
 
-El adjunto amplía el inventario conceptual. Cada integración, modo y responsabilidad necesita prioridad, especificación y evidencia antes de declararse entregado. Las ampliaciones de fábrica autónoma y sistema operativo cognitivo conservan el estado conceptual del contexto maestro hasta una decisión explícita. [Contexto maestro](../gandalf-wizard-contexto-maestro.md)
+El adjunto amplía el inventario conceptual. Cada integración, modo y responsabilidad necesita prioridad, especificación y evidencia antes de declararse entregado. Las ampliaciones de fábrica autónoma y sistema operativo cognitivo conservan el estado conceptual del contexto maestro hasta una decisión explícita. [Especificación maestra](../Gandalf_Wizard_v1.1.0/docs/GANDALF_WIZARD_ESPECIFICACION_MAESTRA.md)
+
+### 57. Gandalf Control Center — alcance confirmado, diseño técnico pendiente
+
+El panel puede apoyarse en los contratos compartidos de configuración y operación. La edición, las aprobaciones y el control del runtime dependen del versionado, la autorización y la auditoría del núcleo. El anexo describe requisitos y criterios de aceptación. La selección del stack y los contratos técnicos detallados siguen abiertos. [Anexo GW-57](../Gandalf_Wizard_v1.1.0/docs/GW-57_CONTROL_CENTER_SPEC.md)
 
 ## Cambios de alcance y decisiones abiertas
 
@@ -261,6 +268,6 @@ El adjunto amplía el inventario conceptual. Cada integración, modo y responsab
 
 ## Secuencia recomendada
 
-1. **Verificar la sincronización de la épica #28.** Generar una skill y una regla entre los destinos elegidos. Comprobar que la segunda ejecución conserva la salida, preserva ediciones locales e informa capacidades ausentes. [Épica #28](https://github.com/CodeMonkReaper/gandalf-wizard/issues/28)
-2. **Ejecutar un workflow pequeño de extremo a extremo.** Una solicitud, un objetivo verificable, dos tareas, un checkpoint, una aprobación y un informe de evidencia. Probar recuperación tras interrupción y comprobar que un reintento conserva un único efecto.
+1. **Especificar la prueba de fase 04.** Usar la definición de workflow de referencia de Runtime 0.3 para fijar las capacidades obligatorias, los criterios comunes y la evidencia que debe producir cada ejecución. [Roadmap, anexo C](../Gandalf_Wizard_v1.1.0/docs/GANDALF_WIZARD_ESPECIFICACION_MAESTRA.md#anexo-c-roadmap-y-criterios-de-aceptación)
+2. **Verificar en Codex y OpenCode reales.** Ejecutar la misma definición y comprobar el resultado, los gates, la aprobación y la recuperación contra los criterios acordados. Registrar versión, capacidades y evidencia por ejecutor. Si falta una capacidad obligatoria, documentar el impedimento y el criterio que impide cumplir.
 3. **Medir valor en Software Engineering y Documentación.** Comparar una tarea real por dominio contra un flujo directo en un solo harness. Medir precisión, cobertura, tiempo y consumo antes de ampliar agentes, adaptadores o interfaces.
