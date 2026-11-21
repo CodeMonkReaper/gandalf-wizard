@@ -1,0 +1,76 @@
+name: "Sub-tarea ASDD"
+description: "Tarea atómica derivada de un plan y listado de tareas ASDD aprobados."
+title: "<slug> T00X — "
+labels: ["type:task", "lane:asdd", "status:ready"]
+body:
+  - type: input
+    id: epica_padre
+    attributes:
+      label: "Épica padre"
+      description: "Número y enlace del Issue épica padre."
+      placeholder: "#40"
+    validations:
+      required: true
+  - type: input
+    id: tarea_id
+    attributes:
+      label: "ID de tarea"
+      description: "Identificador de tarea en el plan (p. ej. T001)."
+      placeholder: "T001"
+    validations:
+      required: true
+  - type: textarea
+    id: objetivo_contrato
+    attributes:
+      label: "Objetivo y alcance técnico"
+      description: "Contratos, archivos o paquetes afectados según el plan aprobado."
+    validations:
+      required: true
+  - type: textarea
+    id: done_check
+    attributes:
+      label: "Comprobación de cierre (done-check)"
+      description: "Comando literal y verificación observable exigida para cerrar esta tarea."
+      placeholder: "go test -count=1 -v ./internal/..."
+    validations:
+      required: true
+  - type: textarea
+    id: trazabilidad
+    attributes:
+      label: "Trazabilidad"
+      description: "Criterios de aceptación de la spec cubiertos y dependencias previas."
+      value: |
+        - Criterios de aceptación:
+        - Dependencias del plan:
+    validations:
+      required: true
+  - type: dropdown
+    id: riesgo
+    attributes:
+      label: "Riesgo previsto (rsc risk)"
+      options:
+        - "tier:0"
+        - "tier:1"
+        - "tier:2"
+    validations:
+      required: true
+  - type: input
+    id: delegacion
+    attributes:
+      label: "Ejecutor / modelo Vibe previsto"
+      description: "Indica `Coordinador directo` o el modelo de Vibe elegido desde `rsc-vibe models` (p. ej. `zai-glm-5-3-flash`, `zai-glm-5-3`, `mistral-large-4`, `mistral-vibe-cli-latest`)."
+      placeholder: "Vibe — <modelo> (6 turnos) | Coordinador directo"
+    validations:
+      required: false
+  - type: checkboxes
+    id: cierre_tecnico
+    attributes:
+      label: "Puerta de Cierre Técnico (obligatoria antes de pasar al siguiente Issue)"
+      description: "Se marca al cerrar la tarea publicando el Informe de Cierre Técnico en comentarios."
+      options:
+        - label: "Revisión técnica detallada de commits, archivos, contratos y casos borde publicada en este Issue."
+          required: false
+        - label: "Tabla de errores del desarrollo y soluciones aplicadas documentada (o declarado `Ninguno`)."
+          required: false
+        - label: "Evidencia real del `done-check`, revisión por tier (`rsc risk`) y registro de progreso/Vibe actualizados."
+          required: false

@@ -134,6 +134,8 @@ gandalf.exe
 *whoami_cache*.json
 *google_accounts*.json
 .gandalf.json
+.gandalf
+.gandalf/
 .vibe/sessions/
 .vibe/logs/
 .vibe/worktrees/

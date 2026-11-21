@@ -1,0 +1,53 @@
+name: "Bug / Regresión"
+description: "Fallo reproducible que requiere diagnóstico de causa raíz y fix verificado."
+title: "fix(<área>): "
+labels: ["type:bug", "status:ready"]
+body:
+  - type: textarea
+    id: sintoma_esperado
+    attributes:
+      label: "Síntoma observado vs comportamiento esperado"
+      description: "Qué falla hoy y cuál debería ser el comportamiento correcto."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduccion
+    attributes:
+      label: "Reproducción mínima"
+      description: "Pasos, comando o test que reproduce el fallo de forma determinista."
+    validations:
+      required: true
+  - type: input
+    id: entorno
+    attributes:
+      label: "Entorno"
+      description: "Sistema operativo, versión de Go y versión de harness o proveedor si aplica."
+      placeholder: "Windows / Go 1.27.3"
+    validations:
+      required: true
+  - type: dropdown
+    id: riesgo
+    attributes:
+      label: "Riesgo previsto (rsc risk)"
+      options:
+        - "tier:0"
+        - "tier:1"
+        - "tier:2"
+    validations:
+      required: true
+  - type: textarea
+    id: criterio_fix
+    attributes:
+      label: "Criterio de verificación del fix"
+      description: "Prueba de regresión y comandos que validan la corrección."
+    validations:
+      required: true
+  - type: checkboxes
+    id: cierre_tecnico
+    attributes:
+      label: "Puerta de Cierre Técnico (obligatoria antes de pasar al siguiente Issue)"
+      options:
+        - label: "Revisión técnica del fix y test de regresión publicados en el Informe de Cierre Técnico."
+          required: false
+        - label: "Causa raíz verificada y solución aplicada documentadas en la tabla de errores/soluciones."
+          required: false

@@ -51,8 +51,14 @@ func scanPathAndContent(relPath string, content []byte) []string {
 	if lowerSlash == ".vibe/config.toml" {
 		findings = append(findings, "configuracion local prohibida: "+slash)
 	}
-	for _, prefix := range []string{".vibe/sessions/", ".vibe/logs/", ".vibe/worktrees/", ".rsc/", "01-tools/vibe-bridge/", "02-docs/security/"} {
-		if strings.HasPrefix(lowerSlash, prefix) {
+	// A file named exactly .gandalf is neither a directory for the .gitignore
+	// pattern nor caught by the prefix rules below.
+	if base == ".gandalf" {
+		findings = append(findings, "estado local de workflows prohibido: "+slash)
+	}
+	for _, prefix := range []string{".vibe/sessions/", ".vibe/logs/", ".vibe/worktrees/", ".rsc/", ".gandalf/", "01-tools/vibe-bridge/", "02-docs/security/"} {
+		// A workflow can use a subproject as its root.
+		if strings.HasPrefix(lowerSlash, prefix) || (prefix == ".gandalf/" && strings.Contains(lowerSlash, "/"+prefix)) {
 			findings = append(findings, "directorio local o sensible prohibido: "+slash)
 			break
 		}
@@ -175,6 +181,21 @@ func TestRepoSecurityGate(t *testing.T) {
 				content: []byte(`{"project":"demo"}`),
 			},
 			{
+				name:    "checkpoint local de workflow",
+				relPath: ".gandalf/workflows/runs/run-1/state.json",
+				content: []byte(`{"status":"paused"}`),
+			},
+			{
+				name:    "artefacto local de un subproyecto",
+				relPath: "examples/demo/.gandalf/workflows/runs/run-1/artifacts/report.txt",
+				content: []byte("synthetic artifact"),
+			},
+			{
+				name:    "fichero con el nombre del estado local",
+				relPath: "examples/demo/.gandalf",
+				content: []byte("not a directory"),
+			},
+			{
 				name:    "archivo credentials json",
 				relPath: "config/client_credentials.json",
 				content: []byte(`{}`),
@@ -220,10 +241,29 @@ func TestRepoSecurityGate(t *testing.T) {
 			{relPath: ".vibe/hooks.toml", content: []byte("# hooks\n")},
 			{relPath: "internal/cli/router.go", content: []byte("package cli\n")},
 			{relPath: "02-DOCS/wiki/index.md", content: []byte("# Conocimiento\n")},
+			{relPath: "testdata/.gandalf-example/workflow.json", content: []byte(`{}`)},
 		}
 		for _, tc := range allowedCases {
 			if findings := scanPathAndContent(tc.relPath, tc.content); len(findings) > 0 {
 				t.Errorf("%s: no debia bloquearse, hallazgos=%v", tc.relPath, findings)
+			}
+		}
+	})
+
+	t.Run("git ignora el estado local de workflows", func(t *testing.T) {
+		root := gitRepoRoot(t)
+		for _, tc := range []struct {
+			path string
+			rule string
+		}{
+			{".gandalf/workflows/runs/run-1/state.json", ":.gandalf/"},
+			{".gandalf", ":.gandalf"},
+			{"examples/demo/.gandalf", ":.gandalf"},
+		} {
+			out, err := exec.Command("git", "-C", root, "check-ignore", "--no-index", "-v", "--", tc.path).CombinedOutput()
+			rule, _, _ := strings.Cut(string(out), "\t")
+			if err != nil || !strings.HasPrefix(rule, ".gitignore:") || !strings.HasSuffix(rule, tc.rule) {
+				t.Errorf("la regla %s de .gitignore debe excluir %s: %v (%q)", tc.rule, tc.path, err, out)
 			}
 		}
 	})
