@@ -43,6 +43,18 @@ body:
     validations:
       required: true
   - type: checkboxes
+    id: acuerdo
+    attributes:
+      label: "Puerta de Acuerdo (obligatoria antes de `status:in-progress`)"
+      description: "Se marca al publicar el Acuerdo del cambio en comentarios, antes de tocar archivos."
+      options:
+        - label: "Alcance congelado: qué entra y qué no entra en este cambio."
+          required: false
+        - label: "Verificación literal acordada (comando exacto y resultado esperado)."
+          required: false
+        - label: "Riesgo previsto declarado y veredicto `ACORDADO` del propietario."
+          required: false
+  - type: checkboxes
     id: cierre_tecnico
     attributes:
       label: "Puerta de Cierre Técnico (obligatoria antes de pasar al siguiente Issue)"
