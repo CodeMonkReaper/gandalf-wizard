@@ -66,6 +66,18 @@ body:
     validations:
       required: false
   - type: checkboxes
+    id: acuerdo
+    attributes:
+      label: "Puerta de Acuerdo (obligatoria antes de `status:in-progress`)"
+      description: "Se marca al publicar el Acuerdo de la épica en comentarios, antes de pasar a `implement`."
+      options:
+        - label: "Contrato: criterios de aceptación vinculados a la spec y al plan aprobados."
+          required: false
+        - label: "Alcance de la épica y de sus sub-Issues `T001`..`T00N` congelado."
+          required: false
+        - label: "Comprobación de cierre y `rsc risk` previsto declarados; veredicto `ACORDADO` del propietario."
+          required: false
+  - type: checkboxes
     id: cierre_epica
     attributes:
       label: "Reglas de gobierno y cierre"

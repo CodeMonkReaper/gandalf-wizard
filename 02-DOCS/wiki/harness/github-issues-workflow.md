@@ -1,15 +1,17 @@
 ---
 type: reference
 title: Flujo, etiquetas y plantillas de GitHub Issues
-description: Convenciones de Issues, taxonomía de etiquetas, plantilla de Pull Request y puerta de cierre técnico obligatoria.
+description: Convenciones de Issues, taxonomía de etiquetas, plantilla de Pull Request y puertas de acuerdo y de cierre técnico obligatorias.
 tags: [harness, github, issues, workflow, ftd, asdd]
-timestamp: 2026-11-20T15:27:00Z
+timestamp: 2026-11-21T14:55:00Z
 topic: harness
 ---
 
 # Flujo de trabajo con GitHub Issues y Pull Requests
 
 La [constitución v1.2.0](../sdd/constitution.md#L33) exige que toda feature, tarea o cambio sustancial cuente con un Issue abierto desde el inicio y se integre mediante rama y Pull Request vinculado con autorización humana. Esta guía fija cómo operamos GitHub Issues en [CodeMonkReaper/gandalf-wizard](https://github.com/CodeMonkReaper/gandalf-wizard).
+
+Cada Issue atraviesa dos puertas obligatorias. La **Puerta de Acuerdo** (§4) congela qué se hará y cómo se probará antes de la primera línea de código. La **Puerta de Cierre Técnico** (§5) demuestra que se hizo. Sin la primera no se abre el trabajo; sin la segunda no se pasa al Issue siguiente.
 
 ---
 
@@ -39,8 +41,9 @@ Cada Issue combina etiquetas de cuatro dimensiones ortogonales:
 
 ### Transiciones estándar
 
-- **Épica ASDD:** `status:spec` (en `specify`/`clarify`/`plan`) → `status:in-progress` (en `implement`) → `status:in-review` (al abrir el PR de cierre).
-- **Sub-tarea / FTD / Bug:** `status:ready` (al crearse) → `status:in-progress` (al tomarse) → `status:in-review` (al publicar su cierre técnico / abrir PR).
+- **Puerta de Acuerdo (todos los tipos):** ningún Issue pasa a `status:in-progress` sin su Acuerdo publicado y aprobado (§4). Vale también para las épicas antes de `implement`.
+- **Épica ASDD:** `status:spec` (en `specify`/`clarify`/`plan`) → Acuerdo (§4) → `status:in-progress` (en `implement`) → `status:in-review` (al abrir el PR de cierre).
+- **Sub-tarea / FTD / Bug:** `status:ready` (al crearse) → Acuerdo (§4) → `status:in-progress` (al tomarse) → `status:in-review` (al publicar su cierre técnico / abrir PR).
 - **Bloqueos:** si aparece una entrada `[blocking]` en la Decision Queue o un bloqueo externo, añadir `status:blocked` y retirarlo al desbloquearse.
 
 ---
@@ -54,7 +57,52 @@ Cada Issue combina etiquetas de cuatro dimensiones ortogonales:
 
 ---
 
-## 4. Puerta de Cierre Técnico (obligatoria antes de pasar al siguiente Issue)
+## 4. Puerta de Acuerdo del Issue (entrada, obligatoria)
+
+**Regla vinculante (control procedimental):** ningún Issue (`T00X`, FTD o bug) pasa de `status:ready` a `status:in-progress` sin publicar antes en ese Issue su **Acuerdo de Issue**, aprobado por el propietario. Es la puerta simétrica a la de Cierre Técnico (§5): el Acuerdo fija qué se hará y cómo se probará; el Cierre demuestra que se hizo.
+
+*Límite explícito (Constitución P6):* igual que la puerta de cierre, este es un control procedimental/consultivo. Hoy no existe un workflow de GitHub Actions ni un hook remoto que bloquee técnicamente la transición.
+
+### Plantilla obligatoria del comentario de acuerdo
+
+````markdown
+## Acuerdo de Issue — #<N> (<slug / tarea>)
+
+### 1. Contrato contra el plan
+- **Tarea y plan:** `T00X` de [<plan>](<ruta>), aprobado el <fecha>.
+- **Criterios de aceptación que cubre:** `P<n>`…
+- **Dependencias:** `#<M>` cerrado | ninguna.
+
+### 2. Alcance congelado
+- **Entra:** <paquetes, archivos y contratos que esta tarea toca>.
+- **No entra:** <lo que queda para el Issue siguiente, nombrado>.
+- **Fija para las tareas siguientes:** <interfaz, tipo, formato o ruta>.
+
+### 3. Comprobación de cierre literal
+```bash
+<comando exacto que se ejecutará al cerrar>
+```
+- **Resultado esperado:** <salida o aserción observable>.
+- **Si no puede ejecutarse tal cual:** <motivo y qué lo sustituye>.
+
+### 4. Riesgo
+- **`rsc risk` previsto:** `tier:<n>` · **Revisión:** <fresca de contexto frío | panel de tres | ninguna>.
+
+### 5. Veredicto
+`ACORDADO` (habilita `status:in-progress`) | `ACLARAR` (<pregunta concreta al propietario>) | `FUERA DE ALCANCE` (se abre Issue propio).
+````
+
+### Reglas de vigencia
+
+- El Acuerdo se escribe **una sola vez**, antes de la primera línea de código. No hace falta reunión: el veredicto del propietario en el comentario es la autorización.
+- Si el alcance o el comando cambian durante el trabajo, **un comentario nuevo sustituye** al anterior indicando qué cambió y por qué. El silencio no es un cambio.
+- `ACLARAR` deja el Issue en `status:blocked`, nunca en `status:in-progress`.
+- El Acuerdo **no declara autorizaciones humanas**: las rigen §3 y la Constitución P5. Una autorización poco habitual (servicio externo, credencial) se anota en «Alcance» como nota.
+- La selección del modelo ejecutor de Vibe tampoco forma parte del Acuerdo: se consigna en el campo «Ejecutor / modelo Vibe previsto» del Issue, conforme a las instrucciones del proyecto.
+
+---
+
+## 5. Puerta de Cierre Técnico (obligatoria antes de pasar al siguiente Issue)
 
 **Regla vinculante (control procedimental):** ningún Issue (`T00X`, FTD o bug) se da por terminado ni habilita el inicio del siguiente Issue sin publicar antes en ese Issue su **Informe de Cierre Técnico**.
 
@@ -87,7 +135,7 @@ Este informe garantiza trazabilidad de qué cambió exactamente, qué controles 
 
 ---
 
-## 5. Reglas operativas en Windows / PowerShell
+## 6. Reglas operativas en Windows / PowerShell
 
 - **Preservar Markdown en `gh`:** usar siempre here-strings con comillas simples (`@'...'@`) enviados por pipe a `gh issue create --body-file -` o `gh issue comment <N> --body-file -`. Nunca usar `@"..."@` porque PowerShell interpreta o corrompe backticks y variables (`$`).
 - **Higiene de secretos:** ningún Issue, comentario, commit o PR puede contener tokens, rutas privadas de credenciales ni salidas sin redactar (`TestRepoSecurityGate`).
