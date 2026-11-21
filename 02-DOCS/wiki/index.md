@@ -27,3 +27,4 @@ La [constitución v1.2.0](sdd/constitution.md) rige la aprobación de cada imple
 
 - Fase 04 con especificación aprobada y aclaraciones cerradas, con plan técnico aprobado. [Prueba de portabilidad entre Codex y OpenCode](sdd/specs/portabilidad-fase-04.md).
 - [Plan técnico de fase 04](sdd/plans/portabilidad-fase-04.md), aprobado, con ocho tareas. El [análisis de consistencia](sdd/analysis/portabilidad-fase-04.md) pasó en segunda revisión. [Épica #58](https://github.com/CodeMonkReaper/gandalf-wizard/issues/58).
+- Fase 04 en ejecución: [registro de avance](sdd/progress/portabilidad-fase-04.md) y [verificación de T001 (caso compartido y memoria fijada)](sdd/verifications/portabilidad-fase-04-t001.md), Issue [#59](https://github.com/CodeMonkReaper/gandalf-wizard/issues/59).

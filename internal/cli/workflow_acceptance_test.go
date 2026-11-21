@@ -16,54 +16,18 @@ import (
 	"time"
 
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/config"
+	"github.com/CodeMonkReaper/gandalf-wizard/internal/portability"
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/workflow/engine"
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/workflow/gates"
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/workflow/schema"
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/workflow/store"
 )
 
-// referenceDefinition mirrors the reference workflow of the specification:
-// analisis-propuesta@1.0.0 with objective OBJ-PROP-001@1.0.0.
+// referenceDefinition reads the shared case of phase 04 from
+// internal/portability, so the acceptance test and the portability test start
+// from the same committed revision.
 func referenceDefinition(concurrency int) schema.WorkflowDefinition {
-	return schema.WorkflowDefinition{
-		SchemaVersion: "1", ID: "analisis-propuesta", Version: "1.0.0", ConcurrencyLimit: concurrency,
-		Objective: schema.ObjectiveSpec{
-			ID: "OBJ-PROP-001", Version: "1.0.0", Statement: "Analizar propuesta tecnica con contexto historico y riesgos",
-			Constraints: []string{"solo texto", "sin secretos"},
-			Deliverables: []schema.DeliverableRef{
-				{Name: "riesgos", Source: "borrador_riesgos.riesgos"},
-				{Name: "recomendacion", Source: "sintesis.recomendacion"},
-			},
-			SuccessCriteria: []schema.CriterionSpec{
-				{ID: "CRIT-RIESGOS", Deliverable: "riesgos", Rules: []schema.GateRuleSpec{{Kind: schema.RuleNonEmpty}}},
-				{ID: "CRIT-REC", Deliverable: "recomendacion", Rules: []schema.GateRuleSpec{
-					{Kind: schema.RuleNonEmpty}, {Kind: schema.RuleJSONValid},
-					{Kind: schema.RuleJSONRequiredKeys, Keys: []string{"decision", "riesgos"}},
-				}},
-			},
-		},
-		Steps: []schema.StepSpec{
-			{ID: "contexto_romero", Kind: schema.StepKindMemoryQuery, Outputs: []string{"contexto"},
-				Memory: &schema.MemoryStepSpec{Query: "decisiones previas propuesta"}},
-			{ID: "borrador_riesgos", Kind: schema.StepKindRouterTask, Outputs: []string{"riesgos"},
-				Router: &schema.RouterStepSpec{Prompt: "Lista riesgos tecnicos", Complexity: "media", Risk: "bajo"}},
-			{ID: "sintesis", Kind: schema.StepKindRouterTask, DependsOn: []string{"contexto_romero", "borrador_riesgos"},
-				Inputs:  map[string]string{"contexto": "contexto_romero.contexto", "riesgos": "borrador_riesgos.riesgos"},
-				Outputs: []string{"recomendacion"},
-				Router:  &schema.RouterStepSpec{Prompt: "Sintetiza en JSON con decision y riesgos"},
-				Correction: &schema.CorrectionSpec{
-					GateStepID: "gate_sintesis", MaxIterations: 2,
-				}},
-			{ID: "gate_sintesis", Kind: schema.StepKindQualityGate, DependsOn: []string{"sintesis"},
-				Gate: &schema.GateSpec{Target: "sintesis.recomendacion", Rules: []schema.GateRuleSpec{
-					{Kind: schema.RuleNonEmpty}, {Kind: schema.RuleJSONValid},
-					{Kind: schema.RuleJSONRequiredKeys, Keys: []string{"decision", "riesgos"}},
-					{Kind: schema.RuleNoSecrets},
-				}}},
-			{ID: "aprobacion_revision", Kind: schema.StepKindHumanApproval, DependsOn: []string{"gate_sintesis"},
-				Approval: &schema.ApprovalStepSpec{Prompt: "Revisar recomendacion y aprobar cierre"}},
-		},
-	}
+	return portability.Definition(concurrency)
 }
 
 func writeDefinition(t *testing.T, dir string, def schema.WorkflowDefinition) string {
@@ -75,6 +39,21 @@ func writeDefinition(t *testing.T, dir string, def schema.WorkflowDefinition) st
 	path := filepath.Join(dir, "workflow.json")
 	if err := os.WriteFile(path, data, 0o600); err != nil {
 		t.Fatal(err)
+	}
+	return path
+}
+
+// writeCase writes the shared case exactly as internal/portability defines it,
+// so the acceptance test runs the definition the case fingerprints.
+func writeCase(t *testing.T, dir string) string {
+	t.Helper()
+	data, err := portability.DefinitionJSON()
+	if err != nil {
+		t.Fatalf("definición canónica del caso: %v", err)
+	}
+	path := filepath.Join(dir, "workflow.json")
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		t.Fatalf("escribir el caso: %v", err)
 	}
 	return path
 }
@@ -139,11 +118,17 @@ func (c *workflowCalls) peakValue() int {
 	return c.peak
 }
 
-// referencePorts wires deterministic providers for the reference workflow.
-func referencePorts(calls *workflowCalls, recommendation func(attempt int) string) (engine.MemoryPort, engine.RouterPort) {
-	memory := workflowMemoryFunc(func(context.Context, string, string, string) (engine.MemoryResult, error) {
+// referencePorts wires deterministic providers for the reference workflow. The
+// memory port answers from the shared case of phase 04.
+func referencePorts(t *testing.T, calls *workflowCalls, recommendation func(attempt int) string) (engine.MemoryPort, engine.RouterPort) {
+	t.Helper()
+	fixed, err := portability.NewFixedMemory(portability.FixedMemory())
+	if err != nil {
+		t.Fatalf("copia de memoria compartida invalida: %v", err)
+	}
+	memory := workflowMemoryFunc(func(ctx context.Context, projectID, callerID, query string) (engine.MemoryResult, error) {
 		defer calls.enter("memory")()
-		return engine.MemoryResult{Text: "decision previa: continuar con la propuesta"}, nil
+		return fixed.Query(ctx, projectID, callerID, query)
 	})
 	var mu sync.Mutex
 	attempts := 0
@@ -169,8 +154,8 @@ func referenceRunner(t *testing.T, calls *workflowCalls, recommendation func(int
 	t.Helper()
 	c := newCaptured(t)
 	c.withProjectFile(t, "demo")
-	c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(calls, recommendation)
-	return c, writeDefinition(t, c.deps.WorkDir, referenceDefinition(2))
+	c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(t, calls, recommendation)
+	return c, writeCase(t, c.deps.WorkDir)
 }
 
 // runReference executes the reference workflow through the CLI.
@@ -320,7 +305,7 @@ func TestWorkflowAcceptance(t *testing.T) {
 	})
 
 	t.Run("AC-03 a blocking gate rejects the producer and skips dependents", func(t *testing.T) {
-		def := referenceDefinition(2)
+		def := referenceDefinition(portability.ReferenceConcurrency)
 		for i := range def.Steps {
 			if def.Steps[i].ID == "sintesis" {
 				// Without a correction the producer passes and the gate rejects it.
@@ -329,7 +314,7 @@ func TestWorkflowAcceptance(t *testing.T) {
 		}
 		c := newCaptured(t)
 		c.withProjectFile(t, "demo")
-		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(&workflowCalls{}, func(int) string { return "sin json" })
+		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(t, &workflowCalls{}, func(int) string { return "sin json" })
 		file := writeDefinition(t, c.deps.WorkDir, def)
 		if code := runCLI(t, c, "workflow", "run", "--json", file); code != ExitFailed {
 			t.Fatalf("gate bloqueante = %d: stderr=%s stdout=%s", code, c.stderr.String(), c.stdout.String())
@@ -371,7 +356,7 @@ func TestWorkflowAcceptance(t *testing.T) {
 	})
 
 	t.Run("AC-03 an informative gate warns without blocking", func(t *testing.T) {
-		def := referenceDefinition(2)
+		def := referenceDefinition(portability.ReferenceConcurrency)
 		for i := range def.Steps {
 			switch def.Steps[i].ID {
 			case "sintesis":
@@ -386,7 +371,7 @@ func TestWorkflowAcceptance(t *testing.T) {
 		}
 		c := newCaptured(t)
 		c.withProjectFile(t, "demo")
-		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(&workflowCalls{}, nil)
+		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(t, &workflowCalls{}, nil)
 		file := writeDefinition(t, c.deps.WorkDir, def)
 		if code := runCLI(t, c, "workflow", "run", "--json", file); code != ExitAwaitingApproval {
 			t.Fatalf("gate informativo = %d: stderr=%s stdout=%s", code, c.stderr.String(), c.stdout.String())
@@ -448,7 +433,7 @@ func TestWorkflowAcceptance(t *testing.T) {
 	})
 
 	t.Run("AC-05 the human gate stops every branch until it is decided", func(t *testing.T) {
-		def := referenceDefinition(2)
+		def := referenceDefinition(portability.ReferenceConcurrency)
 		def.Steps = append(def.Steps, schema.StepSpec{
 			ID: "post", Kind: schema.StepKindRouterTask, DependsOn: []string{"aprobacion_revision"},
 			Outputs: []string{"texto"}, Router: &schema.RouterStepSpec{Prompt: "cierre posterior"},
@@ -456,7 +441,7 @@ func TestWorkflowAcceptance(t *testing.T) {
 		calls := &workflowCalls{}
 		c := newCaptured(t)
 		c.withProjectFile(t, "demo")
-		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(calls, nil)
+		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(t, calls, nil)
 		file := writeDefinition(t, c.deps.WorkDir, def)
 		if code := runCLI(t, c, "workflow", "run", "--json", file); code != ExitAwaitingApproval {
 			t.Fatalf("run con puerta = %d: %s", code, c.stderr.String())
@@ -586,7 +571,7 @@ func TestWorkflowAcceptance(t *testing.T) {
 			"--checkpoint", checkpoint, "--decision", "approve"); code != ExitOK {
 			t.Fatalf("approve = %d: %s", code, c.stderr.String())
 		}
-		altered := referenceDefinition(2)
+		altered := referenceDefinition(portability.ReferenceConcurrency)
 		altered.Objective.Statement = "Definición alterada"
 		writeDefinition(t, c.deps.WorkDir, altered)
 		if code := runCLI(t, c, "workflow", "resume", "--json", runID); code != ExitConflict {
@@ -619,7 +604,7 @@ func TestWorkflowAcceptance(t *testing.T) {
 		if memoryCalls == 0 {
 			t.Fatal("la memoria no llegó a ejecutarse")
 		}
-		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(calls, nil)
+		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(t, calls, nil)
 		if code := runCLI(t, c, "workflow", "resume", "--json", runID); code != ExitAwaitingApproval {
 			t.Fatalf("resume = %d: %s", code, c.stderr.String())
 		}
@@ -654,7 +639,7 @@ func TestWorkflowAcceptance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("no se pudo simular el coordinador vivo: %v", err)
 		}
-		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(&workflowCalls{}, nil)
+		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(t, &workflowCalls{}, nil)
 		code := runCLI(t, c, "workflow", "resume", "--json", runID)
 		lock.Close()
 		if code != ExitConflict {
@@ -663,13 +648,13 @@ func TestWorkflowAcceptance(t *testing.T) {
 	})
 
 	t.Run("AC-09 optional branch failure closes partial with the full trace", func(t *testing.T) {
-		def := referenceDefinition(2)
+		def := referenceDefinition(portability.ReferenceConcurrency)
 		def.Steps = append(def.Steps,
 			schema.StepSpec{ID: "extra", Kind: schema.StepKindRouterTask, Optional: true, Outputs: []string{"texto"},
 				Router: &schema.RouterStepSpec{Prompt: "informe extra"}})
 		c := newCaptured(t)
 		c.withProjectFile(t, "demo")
-		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(&workflowCalls{}, nil)
+		c.deps.WorkflowMemory, c.deps.WorkflowRouter = referencePorts(t, &workflowCalls{}, nil)
 		c.deps.WorkflowRouter = workflowRouterFunc(func(_ context.Context, req engine.RouterRequest) (engine.RouterResult, error) {
 			switch {
 			case strings.Contains(req.Prompt, "informe extra"):

@@ -16,7 +16,7 @@ El operador debe poder ejecutar el análisis de una propuesta técnica en dos en
 
 ## Caso de referencia
 
-Usar una única definición versionada de `analisis-propuesta` 1.0.0 y su objetivo `OBJ-PROP-001`. El flujo consulta contexto en ROMERO, identifica riesgos, sintetiza una recomendación y solicita revisión humana. Los dos destinos parten del mismo commit, entrada, contexto de prueba y versiones de metodología, skill y reglas. El alcance comprende el flujo de solo texto y sus pruebas de contrato. Otros ejecutores, interfaces y comparaciones de rendimiento quedan para fases posteriores. [Definición de referencia](../../../../internal/cli/workflow_acceptance_test.go)
+Usar una única definición versionada de `analisis-propuesta` 1.0.0 y su objetivo `OBJ-PROP-001`. El flujo consulta contexto en ROMERO, identifica riesgos, sintetiza una recomendación y solicita revisión humana. Los dos destinos parten del mismo commit, entrada, contexto de prueba y versiones de metodología, skill y reglas. El alcance comprende el flujo de solo texto y sus pruebas de contrato. Otros ejecutores, interfaces y comparaciones de rendimiento quedan para fases posteriores. [Definición de referencia](../../../../internal/portability/reference.go)
 
 ## Criterios de aceptación aprobados
 
