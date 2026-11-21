@@ -22,8 +22,10 @@ slug: portabilidad-fase-04
 - **Ronda 1 de revisión (contexto frío):** REQUEST CHANGES, 6 hallazgos (H1 y H2 MEDIA; H3–H6 BAJA). La extracción se verificó fiel campo por campo y las aserciones no se debilitaron; los dos MEDIA afectaban a la capacidad probatoria de las huellas. Corregidos los seis.
 - **Ronda 2:** APPROVE CON RESERVAS. El revisor reejecutó sus cinco ataques y los cinco fallan ahora. Quedaron tres condiciones menores, ya aplicadas: huellas y recuentos exactos en este informe de verificación (N1), identidad de la aceptación anclada a `DefinitionJSON()` (R1) y destinos dentro de la huella del caso (N2).
 - **Evidencia:** [verificación de T001](../verifications/portabilidad-fase-04-t001.md).
-- **Deuda registrada:** la regla `no_secrets` del gate de síntesis no tiene prueba de bloqueo, ni antes ni después de T001. Se atiende en la matriz real (T008) o en un Issue propio; fuera del alcance de T001. `NewFixedMemory` valida coherencia interna de la copia, no pertenencia al caso; hoy el único consumidor pasa `FixedMemory()`.
+- **Deuda registrada:** la regla `no_secrets` del gate de síntesis no tiene prueba de bloqueo, ni antes ni después de T001. Se atiende en la matriz real (T008) o en un Issue propio; fuera del alcance de T001.
 
 ## Siguiente
+
+**Corrección posterior a la revisión:** `NewFixedMemory` exige también la huella de la copia fijada. Una prueba reproduce el rechazo de texto o revisión alterados incluso con la huella recalculada. Antes de la corrección ambos casos se aceptaban. La deuda de `no_secrets` sigue pendiente.
 
 T002 ([#60](https://github.com/CodeMonkReaper/gandalf-wizard/issues/60)): manifiestos por destino y comprobación previa de elegibilidad. Depende de T001 y su nombre de prueba comprometido es `TestPortablePreflight`.

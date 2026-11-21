@@ -93,4 +93,4 @@ En la ronda 2 el revisor reejecutó sus cinco ataques de la ronda 1 sobre copias
 
 Quitar la regla `no_secrets` del gate de síntesis deja verdes las dos suites, también en `origin/master`. P3 no tiene hoy prueba de bloqueo por secretos. Se registra para la matriz real (T008), no se corrige aquí: queda fuera del alcance congelado de T001.
 
-`NewFixedMemory` valida coherencia interna de la copia, no pertenencia al caso: una copia distinta con su huella recalculada se acepta. El único consumidor pasa `FixedMemory()`. Se revisará si T002/T003 necesitan varias copias.
+**Corrección posterior:** `NewFixedMemory` compara además con la huella de la copia fijada. La prueba de regresión modifica por separado el texto y la revisión, recalcula la huella y exige el rechazo. Antes de la corrección ambos casos se aceptaban.

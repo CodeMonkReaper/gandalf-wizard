@@ -66,7 +66,7 @@ func NewFixedMemory(copy MemoryCopy) (engine.MemoryPort, error) {
 	if copy.Revision == "" {
 		return nil, fmt.Errorf("%w: %q", ErrUnversionedCopy, copy.Query)
 	}
-	if copy.Fingerprint != MemoryFingerprint(copy.Query, copy.Text, copy.Revision) {
+	if copy.Fingerprint != MemoryFingerprint(copy.Query, copy.Text, copy.Revision) || copy.Fingerprint != FixedMemory().Fingerprint {
 		return nil, ErrFingerprintMismatch
 	}
 	return &fixedMemory{copy: copy}, nil

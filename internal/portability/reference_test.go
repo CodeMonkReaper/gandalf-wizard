@@ -207,6 +207,20 @@ func TestPortableReference(t *testing.T) {
 			t.Fatalf("error = %v; want ErrUnversionedCopy", err)
 		}
 	})
+
+	t.Run("rechazo de una copia distinta con huella recalculada", func(t *testing.T) {
+		for _, change := range []func(*portability.MemoryCopy){
+			func(c *portability.MemoryCopy) { c.Text += " alterado" },
+			func(c *portability.MemoryCopy) { c.Revision = "otra-revision" },
+		} {
+			copy := portability.FixedMemory()
+			change(&copy)
+			copy.Fingerprint = portability.MemoryFingerprint(copy.Query, copy.Text, copy.Revision)
+			if _, err := portability.NewFixedMemory(copy); !errors.Is(err, portability.ErrFingerprintMismatch) {
+				t.Errorf("copia distinta aceptada: error = %v; want ErrFingerprintMismatch", err)
+			}
+		}
+	})
 }
 
 // routerSteps counts the router tasks declared by the definition.
