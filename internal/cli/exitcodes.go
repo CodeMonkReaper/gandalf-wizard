@@ -7,6 +7,7 @@ import (
 
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/romero"
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/router"
+	"github.com/CodeMonkReaper/gandalf-wizard/internal/workflow/engine"
 )
 
 // Exit codes specified by the cli-gandalf specification (Table 5).
@@ -30,6 +31,18 @@ const (
 	ExitCanceled   = 10
 )
 
+// Workflow exit codes reserved by the workflow-runtime-03 plan: 11 waiting for
+// a human gate, 12 paused and resumable, 13 partial, 14 blocked, 15 failed and
+// 16 conflict. Codes 0-10 keep their Foundation and Router meaning.
+const (
+	ExitAwaitingApproval = 11
+	ExitPaused           = 12
+	ExitPartial          = 13
+	ExitBlocked          = 14
+	ExitFailed           = 15
+	ExitConflict         = 16
+)
+
 // Dependencies injects runtime capabilities so CLI commands can be tested in-process.
 type Dependencies struct {
 	Version       string
@@ -46,4 +59,8 @@ type Dependencies struct {
 	// RouterRegistry overrides the executor adapter wiring; nil wires the
 	// production adapters.
 	RouterRegistry *router.Registry
+	// WorkflowMemory and WorkflowRouter override the provider ports of the
+	// workflow engine; nil wires the config-driven production adapters.
+	WorkflowMemory engine.MemoryPort
+	WorkflowRouter engine.RouterPort
 }

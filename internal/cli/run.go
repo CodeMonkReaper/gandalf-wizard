@@ -38,6 +38,18 @@ Subcomandos:
                                Aplica una vista previa autorizada con respaldo privado
   sync restore [--json] --operation-id <id>
                                Restaura una operación aplicada o interrumpida
+  workflow validate [--json] <definición>
+                               Preflight de solo lectura de una definición de workflow
+  workflow run [--json] <definición>
+                               Ejecuta la definición y conserva checkpoints en .gandalf/
+  workflow status [--json] <run-id>
+                               Consulta el estado de una corrida
+  workflow approve [--json] <run-id> --gate <id> --checkpoint <huella> --decision <approve|reject> [--reason <texto>]
+                               Registra la decisión del operador sobre una puerta
+  workflow resume [--json] <run-id>
+                               Reanuda una corrida reanudable sin repetir pasos concluidos
+  workflow cancel [--json] <run-id> [--reason <texto>]
+                               Cancela una corrida no terminal
 
 Flags de anulación (config show, doctor, memory query, models, route, run):
   --project <id>        Proyecto activo para esta ejecución
@@ -76,6 +88,8 @@ func Run(ctx context.Context, args []string, deps Dependencies) int {
 		return runCatalog(args[1:], deps)
 	case "sync":
 		return runSync(args[1:], deps)
+	case "workflow":
+		return runWorkflow(ctx, args[1:], deps)
 	default:
 		fmt.Fprintf(deps.Stderr, "error: subcomando desconocido %q\n\n%s", args[0], usageText)
 		return ExitUsageError
