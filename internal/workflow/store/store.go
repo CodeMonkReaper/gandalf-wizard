@@ -21,6 +21,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/CodeMonkReaper/gandalf-wizard/internal/workflow/gates"
 	"github.com/CodeMonkReaper/gandalf-wizard/internal/workflow/schema"
 )
 
@@ -46,11 +47,13 @@ const (
 
 // ArtifactRef records metadata and integrity hash of a persisted redacted step output.
 type ArtifactRef struct {
-	Name      string `json:"name"`
-	RelPath   string `json:"rel_path"`
-	SHA256    string `json:"sha256"`
-	SizeBytes int64  `json:"size_bytes"`
-	Summary   string `json:"summary"`
+	Name           string `json:"name"`
+	RelPath        string `json:"rel_path"`
+	SHA256         string `json:"sha256"`
+	SizeBytes      int64  `json:"size_bytes"`
+	Summary        string `json:"summary"`
+	SecretDetected bool   `json:"secret_detected,omitempty"`
+	JSON           bool   `json:"json,omitempty"`
 }
 
 // AttemptRecord captures one execution attempt for a step or correction loop.
@@ -76,12 +79,17 @@ type StepRecord struct {
 	Artifacts []ArtifactRef   `json:"artifacts,omitempty"`
 	Warnings  []string        `json:"warnings,omitempty"`
 	Error     string          `json:"error,omitempty"`
+	// CorrectionCycleStart indexes the first attempt of the current bounded
+	// correction cycle so a manual resume can grant a fresh budget without
+	// discarding the audit trail of earlier cycles.
+	CorrectionCycleStart int `json:"correction_cycle_start,omitempty"`
 }
 
 // GateRecord persists the latest deterministic outcome of a quality_gate step.
 type GateRecord struct {
 	StepID      string   `json:"step_id"`
 	Target      string   `json:"target"`
+	Prompt      string   `json:"prompt,omitempty"`
 	Status      string   `json:"status"`
 	Informative bool     `json:"informative,omitempty"`
 	Retryable   bool     `json:"retryable,omitempty"`
@@ -97,6 +105,7 @@ type ApprovalRecord struct {
 	Reason           string `json:"reason,omitempty"`
 	CheckpointDigest string `json:"checkpoint_digest"`
 	DecidedAt        string `json:"decided_at"`
+	DecidedBy        string `json:"decided_by,omitempty"`
 }
 
 // ObjectiveVerdictRecord persists the closing objective evaluation in RunState.
@@ -113,6 +122,8 @@ type RunState struct {
 	RunID            string                  `json:"run_id"`
 	WorkflowID       string                  `json:"workflow_id"`
 	WorkflowVersion  string                  `json:"workflow_version"`
+	ObjectiveID      string                  `json:"objective_id,omitempty"`
+	ObjectiveVersion string                  `json:"objective_version,omitempty"`
 	DefinitionPath   string                  `json:"definition_path"`
 	DefinitionSHA256 string                  `json:"definition_sha256"`
 	StateRevision    int64                   `json:"state_revision"`
@@ -162,6 +173,15 @@ type RunLock struct {
 
 // OpenRoot opens and validates the confined .gandalf/workflows store under projectRoot.
 func OpenRoot(projectRoot string) (*WorkflowStore, error) {
+	return openRoot(projectRoot, true)
+}
+
+// OpenExistingRoot opens the workflow store without creating any directories.
+func OpenExistingRoot(projectRoot string) (*WorkflowStore, error) {
+	return openRoot(projectRoot, false)
+}
+
+func openRoot(projectRoot string, create bool) (*WorkflowStore, error) {
 	if strings.TrimSpace(projectRoot) == "" {
 		return nil, fmt.Errorf("%w: empty project root", ErrUnsafePath)
 	}
@@ -196,7 +216,7 @@ func OpenRoot(projectRoot string) (*WorkflowStore, error) {
 	}()
 
 	for _, rel := range []string{".gandalf", ".gandalf/workflows"} {
-		if err := ensureSafeDir(outerRoot, absRoot, rel); err != nil {
+		if err := openSafeDir(outerRoot, absRoot, rel, create); err != nil {
 			return nil, err
 		}
 	}
@@ -209,7 +229,7 @@ func OpenRoot(projectRoot string) (*WorkflowStore, error) {
 	outerRoot = nil
 
 	workflowsPath := filepath.Join(absRoot, ".gandalf", "workflows")
-	if err := ensureSafeDir(wfRoot, workflowsPath, "runs"); err != nil {
+	if err := openSafeDir(wfRoot, workflowsPath, "runs", create); err != nil {
 		_ = wfRoot.Close()
 		return nil, err
 	}
@@ -229,6 +249,10 @@ func equalCleanPath(a, b string) bool {
 }
 
 func ensureSafeDir(root *os.Root, basePath, rel string) error {
+	return openSafeDir(root, basePath, rel, true)
+}
+
+func openSafeDir(root *os.Root, basePath, rel string, create bool) error {
 	full := filepath.Join(basePath, filepath.FromSlash(rel))
 	if len(full) > MaxSafePathLen {
 		return fmt.Errorf("%w: directory path exceeds safe length", ErrUnsafePath)
@@ -236,6 +260,9 @@ func ensureSafeDir(root *os.Root, basePath, rel string) error {
 	info, err := root.Lstat(rel)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
+			if !create {
+				return ErrRunNotFound
+			}
 			if mkErr := root.Mkdir(rel, 0o700); mkErr != nil && !errors.Is(mkErr, os.ErrExist) {
 				return fmt.Errorf("%w: mkdir %s: %v", ErrUnsafePath, rel, mkErr)
 			}
@@ -337,6 +364,8 @@ func (s *WorkflowStore) CreateRun(def schema.ValidatedWorkflow) (string, *RunSta
 		RunID:            runID,
 		WorkflowID:       def.Definition.ID,
 		WorkflowVersion:  def.Definition.Version,
+		ObjectiveID:      def.Definition.Objective.ID,
+		ObjectiveVersion: def.Definition.Objective.Version,
 		DefinitionPath:   def.DefinitionPath,
 		DefinitionSHA256: def.DefinitionSHA256,
 		StateRevision:    1,
@@ -411,7 +440,16 @@ func (l *RunLock) Close() error {
 }
 
 // SaveArtifact redacts and atomically writes an output artifact under the run's artifacts/ directory.
-func (s *WorkflowStore) SaveArtifact(runID, stepID string, iter int, name, sanitizedContent string) (ArtifactRef, error) {
+func (s *WorkflowStore) SaveArtifact(runID, stepID string, iter int, name, content string) (ArtifactRef, error) {
+	return s.saveArtifact(runID, stepID, iter, name, content, false)
+}
+
+// SaveJSONArtifact redacts values while preserving the shape of JSON evidence.
+func (s *WorkflowStore) SaveJSONArtifact(runID, stepID string, iter int, name, content string) (ArtifactRef, error) {
+	return s.saveArtifact(runID, stepID, iter, name, content, true)
+}
+
+func (s *WorkflowStore) saveArtifact(runID, stepID string, iter int, name, content string, structured bool) (ArtifactRef, error) {
 	if s == nil {
 		return ArtifactRef{}, errors.New("workflow store is nil")
 	}
@@ -432,7 +470,10 @@ func (s *WorkflowStore) SaveArtifact(runID, stepID string, iter int, name, sanit
 		return ArtifactRef{}, err
 	}
 
-	fileName := fmt.Sprintf("%s-%d-%s.txt", stepID, iter, name)
+	// A tuple hash distinguishes delimiter boundaries and letter case on Windows.
+	key := fmt.Sprintf("%s\x00%d\x00%s", stepID, iter, name)
+	digest := sha256.Sum256([]byte(key))
+	fileName := fmt.Sprintf("%x.txt", digest[:30])
 	relUnderRun := path.Join("artifacts", fileName)
 	targetRel := path.Join("runs", runID, relUnderRun)
 	if err := s.checkSafeTarget(targetRel); err != nil {
@@ -440,7 +481,18 @@ func (s *WorkflowStore) SaveArtifact(runID, stepID string, iter int, name, sanit
 	}
 
 	secrets := s.snapshotSecrets()
-	clean := redactText(sanitizedContent, secrets)
+	var clean string
+	var found bool
+	if structured {
+		var err error
+		clean, found, err = gates.RedactJSON(content, secrets)
+		if err != nil {
+			return ArtifactRef{}, err
+		}
+	} else {
+		clean = redactText(content, secrets)
+		found = gates.HasSecrets(content, secrets)
+	}
 	sum := sha256.Sum256([]byte(clean))
 
 	if err := s.writeAtomic(targetRel, []byte(clean)); err != nil {
@@ -448,11 +500,13 @@ func (s *WorkflowStore) SaveArtifact(runID, stepID string, iter int, name, sanit
 	}
 
 	return ArtifactRef{
-		Name:      name,
-		RelPath:   relUnderRun,
-		SHA256:    hex.EncodeToString(sum[:]),
-		SizeBytes: int64(len(clean)),
-		Summary:   buildRedactedSummary(clean),
+		Name:           name,
+		RelPath:        relUnderRun,
+		SHA256:         hex.EncodeToString(sum[:]),
+		SizeBytes:      int64(len(clean)),
+		Summary:        buildRedactedSummary(clean),
+		SecretDetected: found,
+		JSON:           structured,
 	}, nil
 }
 

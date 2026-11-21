@@ -559,6 +559,46 @@ func TestWorkflowSchema(t *testing.T) {
 				wantCode: "invalid_rule",
 			},
 			{
+				name: "paso con nombre de dispositivo reservado de Windows",
+				jsonBody: `{
+  "schema_version": "1",
+  "id": "reserved-step",
+  "version": "1.0.0",
+  "objective": {"id": "O1", "version": "1.0.0", "statement": "S", "deliverables": [{"name": "d", "source": "CON.o"}], "success_criteria": [{"id": "C1", "deliverable": "d", "rules": [{"kind": "non_empty"}]}]},
+  "steps": [
+    {"id": "CON", "kind": "router_task", "outputs": ["o"], "router": {"prompt": "p"}}
+  ]
+}`,
+				wantCode: "invalid_identifier",
+			},
+			{
+				name: "salida con nombre de dispositivo reservado de Windows",
+				jsonBody: `{
+  "schema_version": "1",
+  "id": "reserved-output",
+  "version": "1.0.0",
+  "objective": {"id": "O1", "version": "1.0.0", "statement": "S", "deliverables": [{"name": "d", "source": "r.nul"}], "success_criteria": [{"id": "C1", "deliverable": "d", "rules": [{"kind": "non_empty"}]}]},
+  "steps": [
+    {"id": "r", "kind": "router_task", "outputs": ["nul"], "router": {"prompt": "p"}}
+  ]
+}`,
+				wantCode: "invalid_identifier",
+			},
+			{
+				name: "quality_gate marcado opcional",
+				jsonBody: `{
+  "schema_version": "1",
+  "id": "optional-gate",
+  "version": "1.0.0",
+  "objective": {"id": "O1", "version": "1.0.0", "statement": "S", "deliverables": [{"name": "d", "source": "r.o"}], "success_criteria": [{"id": "C1", "deliverable": "d", "rules": [{"kind": "non_empty"}]}]},
+  "steps": [
+    {"id": "r", "kind": "router_task", "outputs": ["o"], "router": {"prompt": "p"}},
+    {"id": "g", "kind": "quality_gate", "depends_on": ["r"], "optional": true, "gate": {"target": "r.o", "rules": [{"kind": "non_empty"}]}}
+  ]
+}`,
+				wantCode: "invalid_step",
+			},
+			{
 				name: "json_required_keys vacio",
 				jsonBody: `{
   "schema_version": "1",

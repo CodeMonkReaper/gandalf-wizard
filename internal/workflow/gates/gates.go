@@ -15,6 +15,9 @@ const (
 	GateStatusFail             = "fail"
 	GateStatusBlocked          = "blocked"
 	GateStatusNeedsHumanReview = "needs_human_review"
+	// GateStatusSkipped records a gate that was never evaluated because its
+	// optional branch was left undecided, so it is not mistaken for a failure.
+	GateStatusSkipped = "skipped"
 )
 
 // GateResult summarizes the deterministic outcome of evaluating a quality gate.
@@ -28,6 +31,12 @@ type GateResult struct {
 
 // EvaluateGate evaluates a closed catalog of deterministic rules over raw step output.
 func EvaluateGate(spec schema.GateSpec, rawOutput string, secretValues []string) GateResult {
+	return EvaluateGateWithSecretEvidence(spec, rawOutput, HasSecrets(rawOutput, secretValues))
+}
+
+// EvaluateGateWithSecretEvidence accepts detection from the decoded values
+// when the output has a structured representation.
+func EvaluateGateWithSecretEvidence(spec schema.GateSpec, rawOutput string, hasSecrets bool) GateResult {
 	if len(spec.Rules) == 0 {
 		res := GateResult{
 			Status:      GateStatusFail,
@@ -43,7 +52,7 @@ func EvaluateGate(spec schema.GateSpec, rawOutput string, secretValues []string)
 
 	// Pass 1: no_secrets blocks immediately, before any other rule runs.
 	for _, rule := range spec.Rules {
-		if rule.Kind == schema.RuleNoSecrets && HasSecrets(rawOutput, secretValues) {
+		if rule.Kind == schema.RuleNoSecrets && hasSecrets {
 			return GateResult{
 				Status:      GateStatusBlocked,
 				Retryable:   false,

@@ -143,7 +143,24 @@ func isSafeNodeID(s string) bool {
 	if len(s) == 0 || len(s) > MaxIdentifierLen || len(s) > MaxArtifactNameLen {
 		return false
 	}
+	if isWindowsReservedDevice(s) {
+		return false
+	}
 	return safeNodePattern.MatchString(s)
+}
+
+// isWindowsReservedDevice mirrors the store's confinement rule so preflight
+// rejects artifact names the store would refuse after a provider already ran.
+func isWindowsReservedDevice(name string) bool {
+	upper := strings.ToUpper(strings.TrimRight(name, " "))
+	switch upper {
+	case "CON", "PRN", "AUX", "NUL":
+		return true
+	}
+	if len(upper) == 4 && (strings.HasPrefix(upper, "COM") || strings.HasPrefix(upper, "LPT")) {
+		return upper[3] >= '1' && upper[3] <= '9'
+	}
+	return false
 }
 
 type errAdder func(code, field, msg string)
@@ -273,6 +290,9 @@ func validateSteps(steps []StepSpec, addErr errAdder) (map[string]StepSpec, []St
 				addErr("invalid_step", prefix, "router_task cannot include memory, gate, or approval config")
 			}
 		case StepKindQualityGate:
+			if s.Optional {
+				addErr("invalid_step", prefix+".optional", "quality_gate cannot be optional; declare the gate informative instead")
+			}
 			if s.Gate == nil || len(s.Gate.Rules) == 0 {
 				addErr("invalid_step", prefix+".gate", "quality_gate requires gate config with at least one rule")
 			} else {
